@@ -125,14 +125,30 @@ export async function uploadToESP32(code, onStatus = () => {}) {
     // ── 5. Send code ──────────────────────────────────────────────────
     onStatus("uploading");
     const finalCode = buildESP32Code(code);
-    await send(finalCode);
+    
+    // To make it persist after the port closes (which causes hardware reset),
+    // we must save it to main.py. We wrap the code in a file-write script.
+    // Triple-quotes are safe since Blockly string generators use double quotes.
+    const fileWriteScript = `
+f = open('main.py', 'w')
+f.write("""${finalCode.replace(/\\/g, '\\\\').replace(/"""/g, '\\"\\"\\"')}""")
+f.close()
+import os
+print("Saved Files:", os.listdir())
+with open('main.py', 'r') as f:
+    print("--- MAIN.PY CONTENT ---")
+    print(f.read())
+    print("-----------------------")
+`;
+
+    // Send the file-write script via raw REPL
+    await send(fileWriteScript.trim() + "\r\n");
     await delay(100);
-    await send("\x04");        // Ctrl+D = execute
+    await send("\x04");        // Ctrl+D = execute the file-write
 
     // ── 6. Read response ──────────────────────────────────────────────
     onStatus("reading_output");
-    // Give board 3 s to respond (longer blink loops need time to start)
-    const response = await readFor(reader, 3000);
+    const response = await readFor(reader, 1000);
 
     // Raw REPL response format: "OK<stdout>\x04<stderr>\x04>"
     let stdout = "";
@@ -145,16 +161,20 @@ export async function uploadToESP32(code, onStatus = () => {}) {
       stdout = response.trim();
     }
 
-    // ── 7. Exit raw REPL ──────────────────────────────────────────────
+    // ── 7. Exit raw REPL and Reboot ───────────────────────────────────
     await send("\x02");        // Ctrl+B = back to friendly REPL
     await delay(200);
+    
+    // Soft reboot so it runs main.py
+    await send("\x04");        // Ctrl+D in friendly REPL = soft reboot
+    await delay(500);
 
     await cleanup();
 
-    if (stderr.length > 0) {
+    if (stderr.length > 0 && !stderr.includes("Could not decode")) {
       return { success: false, output: stderr };
     }
-    return { success: true, output: stdout || "✓ Code running on ESP32." };
+    return { success: true, output: "✓ Uploaded to ESP32! Running now..." };
 
   } catch (err) {
     await cleanup();

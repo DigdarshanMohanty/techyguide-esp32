@@ -8,9 +8,16 @@
     <div id="pageContainer">
       <div id="blocklyDiv"></div>
       <div id="outputPane">
-        <div class="pane-section-label">MicroPython (ESP32-Ready)</div>
+        <div class="board-selector-row">
+          <select id="boardSelector">
+            <option value="esp32">ESP32 (MicroPython)</option>
+            <option value="arduino">Arduino Uno (C++)</option>
+          </select>
+        </div>
+        <div id="codeLabelText" class="pane-section-label">MicroPython (ESP32-Ready)</div>
         <pre id="generatedCode"><code></code></pre>
         <div id="uploadPanel"></div>
+        <div id="arduinoUploadPanel"></div>
       </div>
     </div>
   </body>

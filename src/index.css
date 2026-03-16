@@ -109,6 +109,48 @@ code {
   gap: 0;
 }
 
+/* ── Board Selector ─────────────────────────────────── */
+.board-selector-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 4px;
+}
+
+#boardSelector {
+  width: 100%;
+  padding: 8px 12px;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234facfe' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#boardSelector:hover {
+  border-color: #4facfe;
+}
+
+#boardSelector:focus {
+  border-color: #4facfe;
+  box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+}
+
+#boardSelector option {
+  background: #0f0f1a;
+  color: #e2e8f0;
+  padding: 8px;
+}
+
 .pane-section-label {
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-size: 10px;
@@ -280,4 +322,95 @@ code {
   font-size: 10px;
   color: #475569;
   text-align: center;
+}
+
+.upload-hint code {
+  background: #1e293b;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* ── Arduino Upload Panel ─────────────────────────────── */
+#arduinoUploadPanel {
+  flex: 0 0 auto;
+  padding: 0 10px 14px;
+}
+
+/* Port selector row */
+.port-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.port-select {
+  flex: 1;
+  padding: 8px 12px;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234facfe' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.port-select:hover {
+  border-color: #4facfe;
+}
+
+.port-select:focus {
+  border-color: #4facfe;
+  box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+}
+
+.port-select option {
+  background: #0f0f1a;
+  color: #e2e8f0;
+  padding: 8px;
+}
+
+.refresh-ports-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: #0f0f1a;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  color: #4facfe;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.refresh-ports-btn:hover {
+  background: #1e293b;
+  border-color: #4facfe;
+  transform: rotate(90deg);
+}
+
+.refresh-ports-btn:active {
+  transform: rotate(180deg);
+}
+
+/* Arduino-themed upload button */
+.arduino-upload-btn {
+  background: linear-gradient(135deg, #00979D 0%, #00c4cc 100%);
+}
+
+.arduino-upload-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }

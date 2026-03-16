@@ -614,7 +614,7 @@ export const toolbox = {
     },
     {
       kind: "category",
-      name:'ESP32',
+      name:'Hardware',
       categorystyle: "esp32_category",
       contents: [
         {

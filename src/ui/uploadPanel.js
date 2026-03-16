@@ -20,14 +20,17 @@ const STATUS_LABELS = {
 };
 
 let _getCode = null; // injected by init()
+let _getBoard = null; // injected by init()
 let _isUploading = false;
 
 /**
  * Mount the upload panel into #uploadPanel.
- * @param {function} getCode - function that returns current workspace code string
+ * @param {function} getCode  - function that returns current workspace code string
+ * @param {function} getBoard - function that returns selected board ("esp32" | "arduino")
  */
-export function initUploadPanel(getCode) {
+export function initUploadPanel(getCode, getBoard) {
   _getCode = getCode;
+  _getBoard = getBoard;
 
   const container = document.getElementById("uploadPanel");
   if (!container) return;
