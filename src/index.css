@@ -1,0 +1,283 @@
+body {
+  margin: 0;
+  max-width: 100vw;
+}
+
+pre,
+code {
+  overflow: auto;
+}
+#color-1 {
+  background: #59c059;
+}
+
+#color-2 {
+  background: #ffab19;
+}
+
+#color-3 {
+  background: #4c97ff;
+}
+
+#color-4 {
+  background: #cf63cf;
+}
+
+#color-5 {
+  background: #9966ff;
+}
+
+#color-6 {
+  background: #ff8c1a;
+}
+
+#color-7 {
+  background: #ff6680;
+}
+#color-8 {
+  background: #ccc;
+}
+
+#pageContainer {
+  display: flex;
+  width: 100%;
+  max-width: 100vw;
+  height: 100vh;
+}
+
+#blocklyDiv {
+  flex-basis: 100%;
+  height: 100%;
+  min-width: 600px;
+}
+
+.blocklyToolboxCategoryContainer {
+  display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.blocklyToolboxCategory {
+  border: none !important;
+  padding: 0px 0px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: auto !important;
+    width: 100%;
+    background: none !important;
+}
+
+.blocklyToolboxCategoryGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  gap: 50px;
+}
+
+.blocklyToolboxCategoryIcon {
+  display: none !important;
+}
+  
+[id^="color-"] {
+    width: 30px;
+    height: 30px;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px 0px;
+      pointer-events: none;
+    }
+    
+    .blocklyTreeSeparator {
+      display: none !important;
+}
+/* ── Output Pane ─────────────────────────────────────── */
+#outputPane {
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  flex: 0 0 380px;
+  overflow: auto;
+  background: #1a1a2e;
+  gap: 0;
+}
+
+.pane-section-label {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+  padding: 10px 14px 4px;
+}
+
+#generatedCode {
+  flex: 1 1 45%;
+  background: #0f0f1a;
+  border: none;
+  margin: 0 10px 10px;
+  border-radius: 8px;
+  overflow: auto;
+  padding: 12px;
+}
+
+#generatedCode code {
+  color: #a8d8a8;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+/* ── Upload Panel ────────────────────────────────────── */
+#uploadPanel {
+  flex: 0 0 auto;
+  padding: 0 10px 14px;
+}
+
+.upload-panel {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upload-title {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.upload-title svg {
+  stroke: #4facfe;
+}
+
+/* Status badge */
+.upload-status {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+.status-idle     { background: #1e293b; color: #64748b; }
+.status-waiting  { background: #1e3a5f; color: #60a5fa; }
+.status-uploading{ background: #1a3a1a; color: #4ade80; animation: pulse 1s infinite; }
+.status-success  { background: #14532d; color: #86efac; }
+.status-error    { background: #450a0a; color: #f87171; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Upload button */
+.upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: #0a0a1a;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.upload-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.upload-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.upload-btn:disabled,
+.upload-btn.uploading {
+  background: #334155;
+  color: #64748b;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinner inside button */
+.spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #64748b;
+  border-top-color: #94a3b8;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Output log */
+.upload-log {
+  background: #0f0f1a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 60px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.log-placeholder {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 11px;
+  color: #334155;
+  font-style: italic;
+}
+
+.upload-log pre {
+  margin: 0;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-success { color: #86efac; }
+.log-error   { color: #f87171; }
+.log-warn    { color: #fbbf24; }
+
+/* Hint row */
+.upload-hint {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 10px;
+  color: #475569;
+  text-align: center;
+}
