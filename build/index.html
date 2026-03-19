@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
+  <script defer src="bundle.js"></script></head>
   <body class="mode-scratch">
     <!-- ── Header ─────────────────────────────────── -->
     <header id="appHeader" class="app-header"></header>
@@ -20,19 +20,11 @@
       <!-- RIGHT PANE: Scratch mode (default) -->
       <div id="scratchPane" class="right-pane">
         <div id="stageContainer">
-          <!-- Scratch Controls overlay -->
-          <div id="scratchControls" class="scratch-controls">
-            <button id="greenFlagBtn" class="control-btn flag-btn" title="Start">
-              <svg width="24" height="24" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M4 2l9 5-9 5" fill="#4CAF50" stroke="#4CAF50" stroke-width="1.5" stroke-linejoin="round"/></svg>
-            </button>
-            <button id="stopBtn" class="control-btn stop-btn" title="Stop">
-              <svg width="24" height="24" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" fill="#E53935"/></svg>
-            </button>
-          </div>
           <canvas id="stageCanvas" width="480" height="360"></canvas>
         </div>
-        <!-- PictoBlox style Sprite properties/lists -->
-        <div id="spritePanelContainer"></div>
+        <div id="spritePanel">
+          <!-- Sprite list populated by JS -->
+        </div>
       </div>
 
       <!-- RIGHT PANE: Board mode (hidden by default) -->

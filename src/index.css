@@ -1,74 +1,356 @@
+/* ── Reset & Base ──────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+.blocklySvg * { box-sizing: content-box; }
+
 body {
   margin: 0;
   max-width: 100vw;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: #f9f9f9;
+  overflow: hidden;
 }
 
-pre,
-code {
-  overflow: auto;
-}
-#color-1 {
-  background: #59c059;
+pre, code { overflow: auto; }
+
+input:focus { outline: none; border-color: #4C97FF; box-shadow: 0 0 0 2px rgba(76,151,255,0.3); }
+
+/* ── Header ────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 0 16px;
+  gap: 16px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
-#color-2 {
-  background: #ffab19;
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 15px;
 }
 
-#color-3 {
-  background: #4c97ff;
+/* ── Mode Dropdown ─────────────────────────────────── */
+.mode-dropdown-wrap { position: relative; }
+.mode-dropdown {
+  appearance: none;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 32px 6px 12px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
 }
 
-#color-4 {
-  background: #cf63cf;
+/* ── Scratch Controls (Green Flag / Stop) ──────────── */
+.scratch-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  left: 20px;
+  position: absolute;
+  top: 8px;
+  z-index: 50;
 }
 
-#color-5 {
-  background: #9966ff;
+#stageContainer {
+  position: relative;
 }
 
-#color-6 {
-  background: #ff8c1a;
+.control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
 }
+.flag-btn:hover { background: #e8fee8; }
+.stop-btn:hover { background: #fee8e8; }
 
-#color-7 {
-  background: #ff6680;
-}
-#color-8 {
-  background: #ccc;
-}
-
+/* ── Main Layout ───────────────────────────────────── */
 #pageContainer {
   display: flex;
   width: 100%;
   max-width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 48px);
 }
 
 #blocklyDiv {
-  flex-basis: 100%;
+  flex: 1 1 auto;
   height: 100%;
-  min-width: 600px;
+  min-width: 400px;
+  background: #f9f9f9;
 }
 
+/* ── Right Pane (shared) ───────────────────────────── */
+.right-pane {
+  display: flex;
+  flex-direction: column;
+  width: 480px;
+  flex: 0 0 480px;
+  background: #fff;
+  border-left: 1px solid #e2e2e2;
+}
+
+/* ── Stage Area ──────────────────────────────────── */
+#scratchPane {
+  gap: 0;
+}
+
+#stageContainer {
+  background: #fff;
+  border-bottom: 1px solid #e2e2e2;
+  overflow: hidden;
+  height: 360px;
+  position: relative;
+  line-height: 0;
+}
+
+#stageCanvas {
+  width: 480px;
+  height: 360px;
+  display: block;
+}
+
+/* ── PictoBlox / Scratch Sprite Panel ────────────── */
+#spritePanelContainer {
+  display: flex;
+  flex-direction: column;
+  background: #f9f9f9;
+  padding: 10px 10px;
+  gap: 10px;
+  flex: 1;
+}
+
+.sprite-info-bar {
+  background: #fff;
+  border: 1px solid #dfdfdf;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  color: #575e75;
+  font-weight: 500;
+}
+
+.info-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.info-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sprite-name-group input {
+  width: 90px;
+  border: 1px solid #d9d9d9;
+  border-radius: 16px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.xy-group {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.xy-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.xy-group input, .size-group input, .direction-group input {
+  width: 45px;
+  border: 1px solid #d9d9d9;
+  border-radius: 16px;
+  padding: 4px 8px;
+  text-align: center;
+  font-size: 11px;
+}
+
+.toggle-btns {
+  display: flex;
+  gap: 4px;
+}
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #575e75;
+  display: flex; align-items: center; justify-content: center;
+}
+.icon-btn.active {
+  background: #4C97FF;
+  border-color: #4C97FF;
+  color: white;
+}
+
+/* ── Lists Area ── */
+.media-lists-area {
+  display: flex;
+  gap: 10px;
+  height: 160px;
+}
+
+.sprite-list-section {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #dfdfdf;
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+}
+
+.media-list {
+  flex: 1;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow-y: auto;
+  align-content: flex-start;
+}
+
+.stage-list-section {
+  width: 80px;
+  background: #fff;
+  border: 1px solid #dfdfdf;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  position: relative;
+}
+
+.stage-header {
+  font-size: 11px;
+  color: #575e75;
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+.stage-header small { font-weight: normal; font-size: 9px; }
+
+/* ── Thumbnails ── */
+.sprite-thumb {
+  width: 70px;
+  height: 80px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.sprite-thumb:hover { border-color: #4C97FF; }
+.sprite-thumb.selected {
+  border-color: #4C97FF;
+  box-shadow: 0 0 0 4px rgba(76,151,255,0.2);
+}
+
+.sprite-thumb img {
+  width: 40px;
+  height: 40px;
+  margin: 10px auto 4px;
+  object-fit: contain;
+}
+
+.sprite-thumb-info {
+  background: #e8e8e8;
+  width: 100%;
+  text-align: center;
+  padding: 4px 0;
+  margin-top: auto;
+}
+.sprite-thumb.selected .sprite-thumb-info { background: #e0ebff; color: #4C97FF; }
+
+.sprite-thumb-name { font-size: 10px; font-weight: 500; }
+
+.delete-btn {
+  position: absolute;
+  top: -4px; right: -4px;
+  width: 20px; height: 20px;
+  background: #FF6680;
+  color: white;
+  border-radius: 50%;
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 14px; font-weight: bold;
+}
+.sprite-thumb:hover .delete-btn { display: flex; }
+
+.backdrop-thumb {
+  width: 50px; height: 40px;
+  border: 1px solid #4C97FF;
+  border-radius: 4px;
+  box-shadow: 0 0 0 3px rgba(76,151,255,0.2);
+}
+
+/* ── FAB Add Buttons ── */
+.fab-btn {
+  position: absolute;
+  bottom: -15px;
+  right: -5px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #ec3861; /* PictoBlox pink/red */
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: transform 0.1s;
+  z-index: 10;
+}
+.fab-btn:hover { transform: scale(1.1); }
+.add-backdrop-fab { background: #1a4aa6; bottom: -15px; left: 20px;}
+
+
+/* ── Blockly Overrides ── */
 .blocklyToolboxCategoryContainer {
   display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .blocklyToolboxCategory {
   border: none !important;
   padding: 0px 0px !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: auto !important;
-    width: 100%;
-    background: none !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: auto !important;
+  width: 100%;
+  background: none !important;
 }
 
 .blocklyToolboxCategoryGroup {
@@ -83,201 +365,50 @@ code {
 .blocklyToolboxCategoryIcon {
   display: none !important;
 }
-  
+
+#color-1 { background: #59c059; }
+#color-2 { background: #ffab19; }
+#color-3 { background: #4c97ff; }
+#color-4 { background: #cf63cf; }
+#color-5 { background: #9966ff; }
+#color-6 { background: #ff8c1a; }
+#color-7 { background: #ff6680; }
+#color-8 { background: #ccc; }
+
 [id^="color-"] {
-    width: 30px;
-    height: 30px;
-    border-radius: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 5px 0px;
-      pointer-events: none;
-    }
-    
-    .blocklyTreeSeparator {
-      display: none !important;
-}
-/* ── Output Pane ─────────────────────────────────────── */
-#outputPane {
-  display: flex;
-  flex-direction: column;
-  width: 380px;
-  flex: 0 0 380px;
-  overflow: auto;
-  background: #1a1a2e;
-  gap: 0;
-}
-
-.pane-section-label {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6b7280;
-  padding: 10px 14px 4px;
-}
-
-#generatedCode {
-  flex: 1 1 45%;
-  background: #0f0f1a;
-  border: none;
-  margin: 0 10px 10px;
-  border-radius: 8px;
-  overflow: auto;
-  padding: 12px;
-}
-
-#generatedCode code {
-  color: #a8d8a8;
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 12px;
-  line-height: 1.6;
-  white-space: pre;
-}
-
-/* ── Upload Panel ────────────────────────────────────── */
-#uploadPanel {
-  flex: 0 0 auto;
-  padding: 0 10px 14px;
-}
-
-.upload-panel {
-  background: #16213e;
-  border: 1px solid #0f3460;
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.upload-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.upload-title {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.upload-title svg {
-  stroke: #4facfe;
-}
-
-/* Status badge */
-.upload-status {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 20px;
-  letter-spacing: 0.04em;
-}
-
-.status-idle     { background: #1e293b; color: #64748b; }
-.status-waiting  { background: #1e3a5f; color: #60a5fa; }
-.status-uploading{ background: #1a3a1a; color: #4ade80; animation: pulse 1s infinite; }
-.status-success  { background: #14532d; color: #86efac; }
-.status-error    { background: #450a0a; color: #f87171; }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
-}
-
-/* Upload button */
-.upload-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: #0a0a1a;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  margin: 5px 0px;
+  pointer-events: none;
+}
+    
+.blocklyTreeSeparator {
+  display: none !important;
 }
 
-.upload-btn:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
+/* ── Board Pane (ESP32) ────────────────────────────── */
+#boardPane { background: #1a1a2e; gap: 0; }
+.pane-section-label { font-size: 10px; font-weight: 700; color: #6b7280; padding: 10px 14px 4px; }
+#generatedCode { flex: 1 1 45%; background: #0f0f1a; border-radius: 8px; margin: 0 10px 10px; padding: 12px; }
+#generatedCode code { color: #a8d8a8; font-family: monospace; font-size: 12px; }
 
-.upload-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.upload-btn:disabled,
-.upload-btn.uploading {
-  background: #334155;
-  color: #64748b;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Spinner inside button */
-.spinner {
-  display: inline-block;
-  width: 13px;
-  height: 13px;
-  border: 2px solid #64748b;
-  border-top-color: #94a3b8;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Output log */
-.upload-log {
-  background: #0f0f1a;
-  border-radius: 8px;
-  padding: 10px 12px;
-  min-height: 60px;
-  max-height: 130px;
-  overflow-y: auto;
-}
-
-.log-placeholder {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 11px;
-  color: #334155;
-  font-style: italic;
-}
-
-.upload-log pre {
-  margin: 0;
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 11px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.log-success { color: #86efac; }
-.log-error   { color: #f87171; }
-.log-warn    { color: #fbbf24; }
-
-/* Hint row */
-.upload-hint {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 10px;
-  color: #475569;
-  text-align: center;
-}
+/* ── Upload Panel ────────────────────────────────────── */
+#uploadPanel { flex: 0 0 auto; padding: 0 10px 14px; }
+.upload-panel { background: #16213e; border: 1px solid #0f3460; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.upload-header { display: flex; justify-content: space-between; }
+.upload-title { font-size: 13px; font-weight: 700; color: #e2e8f0; display: flex; gap: 6px; }
+.upload-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.status-idle      { background: #1e293b; color: #64748b; }
+.status-waiting   { background: #1e3a5f; color: #60a5fa; }
+.status-uploading { background: #1a3a1a; color: #4ade80; animation: pulse 1s infinite; }
+.status-success   { background: #14532d; color: #86efac; }
+.status-error     { background: #450a0a; color: #f87171; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.upload-btn { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #0a0a1a; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+.upload-btn:hover:not(:disabled) { opacity: 0.9; }
+.upload-btn:disabled { background: #334155; color: #64748b; }
+#uploadBtn { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border: none; border-radius: 8px; padding: 10px 16px; margin: 0 10px 10px; font-weight: 700; cursor: pointer; }
