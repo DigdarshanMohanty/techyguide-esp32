@@ -34,6 +34,10 @@ class SpriteStore {
    */
   addSprite(name, options = {}) {
     const sprite = new Sprite(name, options);
+
+    // Re-render UI when this sprite's asynchronous costume image loads
+    sprite.onCostumeLoad = () => this._emit('update', sprite);
+
     this.sprites.push(sprite);
 
     if (this.sprites.length === 1) {

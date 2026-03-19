@@ -86,6 +86,7 @@ export class Sprite {
     img.onload = () => {
       this._costumeImages.set(name, img);
       this._loaded = true;
+      if (this.onCostumeLoad) this.onCostumeLoad();
     };
     return this;
   }

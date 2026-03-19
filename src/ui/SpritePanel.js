@@ -156,7 +156,7 @@ function renderPanel() {
     const delBtn = sprites.length > 1 ? `<div class="delete-btn" data-id="${sprite.id}">×</div>` : '';
 
     const img = sprite.getCostumeImage();
-    if (img && img.src.startsWith('data:image/svg+xml')) {
+    if (img && img.src) {
       thumb.innerHTML = `
         <img src="${img.src}" alt="${sprite.name}">
         <div class="sprite-thumb-info">
