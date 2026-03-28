@@ -617,57 +617,102 @@ export const toolbox = {
       name:'ESP32',
       categorystyle: "esp32_category",
       contents: [
-        {
-        kind: "block",
-        type: "print_block",
-      },
-      {
-        kind: "block",
-        type: "add_text",
-      },
-      {
-        kind: "block",
-        type: "wait_block",
-      },
-      {
-        kind: "block",
-        type: "digital_write",
-        message0: "set digital pin %1 to %2",
-        args0: [
-          {
-            type: "field_dropdown",
-            name: "PIN",
-            options:[
-              ["1", "1"],
-              ["2", "2"],
-              ["3", "3"],
-              ["4", "4"],
-              ["5", "5"],
-              ["6", "6"],
-              ["7", "7"],
-              ["8", "8"],
-              ["9", "9"],
-              ["10", "10"],
-              ["11", "11"],
-              ["12", "12"],
-              ["13", "13"],
-            ]
-          },
-          {
-            type: "field_dropdown",
-            name: "STATE",
-            options: [
-              ["HIGH", "1"],
-              ["LOW", "0"]
-            ]
-          }
-        ],
-        previousStatement: null,
-        nextStatement: null,
-        colour: 210,
-        tooltip: "Set digital pin HIGH or LOW"
-      }
-    ]
+        // ── ESP32 Core ──
+        { kind: "label", text: "ESP32" },
+        { kind: "block", type: "esp32_when_starts" },
+        { kind: "block", type: "esp32_read_digital_pin" },
+        { kind: "block", type: "esp32_read_analog_pin" },
+        { kind: "block", type: "esp32_set_digital_pin" },
+        { kind: "block", type: "esp32_set_pwm_pin" },
+        { kind: "block", type: "esp32_get_touch_pin" },
+        { kind: "block", type: "esp32_get_hall_sensor" },
+        { kind: "block", type: "esp32_get_bt_mac" },
+        { kind: "block", type: "esp32_map_value" },
+
+        // ── Existing blocks ──
+        { kind: "label", text: "General" },
+        { kind: "block", type: "print_block" },
+        { kind: "block", type: "add_text" },
+        { kind: "block", type: "wait_block" },
+        { kind: "block", type: "digital_write" },
+
+        // ── Actuators ──
+        { kind: "label", text: "Actuators" },
+        { kind: "block", type: "esp32_enable_servo" },
+        { kind: "block", type: "esp32_set_servo_angle" },
+        { kind: "block", type: "esp32_free_motor" },
+        { kind: "block", type: "esp32_enable_motor" },
+        { kind: "block", type: "esp32_set_relay" },
+        { kind: "block", type: "esp32_enable_led_control" },
+        { kind: "block", type: "esp32_set_led_brightness" },
+        { kind: "block", type: "esp32_pin_state_monitor" },
+
+        // ── Sensors ──
+        { kind: "label", text: "Sensors" },
+        { kind: "block", type: "esp32_ultrasonic" },
+        { kind: "block", type: "esp32_digital_sensor" },
+        { kind: "block", type: "esp32_dht" },
+        { kind: "block", type: "esp32_analog_sensor" },
+        { kind: "block", type: "esp32_potentiometer" },
+
+        // ── Inputs Module ──
+        { kind: "label", text: "Inputs Module" },
+        { kind: "block", type: "esp32_tactile_switch" },
+        { kind: "block", type: "esp32_slide_switch" },
+
+        // ── Communication ──
+        { kind: "label", text: "Communication" },
+        { kind: "block", type: "esp32_bt_serial_baud" },
+        { kind: "block", type: "esp32_set_serial_pins" },
+        { kind: "block", type: "esp32_bt_configure" },
+        { kind: "block", type: "esp32_set_serial_baud" },
+        { kind: "block", type: "esp32_serial_available" },
+        { kind: "block", type: "esp32_serial_read" },
+        { kind: "block", type: "esp32_serial_read_number" },
+        { kind: "block", type: "esp32_serial_read_string" },
+        { kind: "block", type: "esp32_serial_write" },
+
+        // ── Bluetooth ──
+        { kind: "label", text: "Bluetooth" },
+        { kind: "block", type: "esp32_bt_data_available" },
+        { kind: "block", type: "esp32_bt_read" },
+        { kind: "block", type: "esp32_bt_send" },
+
+        // ── Terminal Module ──
+        { kind: "label", text: "Terminal Module" },
+        { kind: "block", type: "esp32_terminal_data" },
+        { kind: "block", type: "esp32_terminal_number" },
+        { kind: "block", type: "esp32_terminal_send" },
+
+        // ── Notification & Music ──
+        { kind: "label", text: "Notification & Music" },
+        { kind: "block", type: "esp32_send_notification" },
+        { kind: "block", type: "esp32_clear_notification" },
+        { kind: "block", type: "esp32_play_music" },
+        { kind: "block", type: "esp32_stop_music" },
+
+        // ── Camera Module ──
+        { kind: "label", text: "Camera Module" },
+        { kind: "block", type: "esp32_camera_flash" },
+        { kind: "block", type: "esp32_rotate_camera" },
+        { kind: "block", type: "esp32_capture_image" },
+
+        // ── IoT / Data Logger ──
+        { kind: "label", text: "IoT Module" },
+        { kind: "block", type: "esp32_create_file" },
+        { kind: "block", type: "esp32_log_data" },
+        { kind: "block", type: "esp32_stop_logger" },
+
+        // ── Dabble / Gamepad ──
+        { kind: "label", text: "Dabble" },
+        { kind: "block", type: "esp32_dabble_set_bt" },
+        { kind: "block", type: "esp32_dabble_refresh" },
+        { kind: "block", type: "esp32_gamepad_pressed" },
+        { kind: "block", type: "esp32_gamepad_angle" },
+        { kind: "block", type: "esp32_phone_sensor" },
+        { kind: "block", type: "esp32_color_detector_grid" },
+        { kind: "block", type: "esp32_color_detector_value" },
+      ]
     },
     {
       kind: "category",

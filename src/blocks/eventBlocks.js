@@ -96,3 +96,41 @@ eventBlocks['when_receive'] = {
     });
   }
 };
+
+eventBlocks['when_backdrop_switches'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'when_backdrop_switches',
+      message0: 'when backdrop switches to %1',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'BACKDROP',
+        options: [['backdrop1', 'backdrop1']],
+      }],
+      nextStatement: null,
+      colour: '#FFBF00',
+      tooltip: 'Run when the backdrop switches',
+    });
+  }
+};
+
+eventBlocks['when_gt'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'when_gt',
+      message0: 'when %1 > %2',
+      args0: [
+        {
+          type: 'field_dropdown',
+          name: 'SENSE',
+          options: [['loudness', 'LOUDNESS'], ['timer', 'TIMER']],
+        },
+        { type: 'input_value', name: 'VALUE', check: 'Number' },
+      ],
+      nextStatement: null,
+      colour: '#FFBF00',
+      tooltip: 'Run when a value exceeds a threshold',
+    });
+  }
+};
+

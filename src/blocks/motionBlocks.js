@@ -183,3 +183,97 @@ motionBlocks['direction_reporter'] = {
     });
   }
 };
+
+// ── go_to (dropdown: random position / mouse-pointer) ──
+motionBlocks['go_to'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'go_to',
+      message0: 'go to %1',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'TO',
+        options: [
+          ['random position', '_random_'],
+          ['mouse-pointer', '_mouse_'],
+        ],
+      }],
+      previousStatement: null, nextStatement: null, colour: '#4C97FF',
+      tooltip: 'Go to a preset target',
+    });
+  }
+};
+
+// ── glide_to (dropdown: random position / mouse-pointer) ──
+motionBlocks['glide_to'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'glide_to',
+      message0: 'glide %1 secs to %2',
+      args0: [
+        { type: 'input_value', name: 'SECS', check: 'Number' },
+        {
+          type: 'field_dropdown',
+          name: 'TO',
+          options: [
+            ['random position', '_random_'],
+            ['mouse-pointer', '_mouse_'],
+          ],
+        },
+      ],
+      previousStatement: null, nextStatement: null, colour: '#4C97FF',
+      tooltip: 'Glide to a preset target over time',
+    });
+  }
+};
+
+// ── point_towards ──
+motionBlocks['point_towards'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'point_towards',
+      message0: 'point towards %1',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'TOWARDS',
+        options: [['mouse-pointer', '_mouse_']],
+      }],
+      previousStatement: null, nextStatement: null, colour: '#4C97FF',
+      tooltip: 'Point towards a target',
+    });
+  }
+};
+
+// ── if_on_edge_bounce ──
+motionBlocks['if_on_edge_bounce'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'if_on_edge_bounce',
+      message0: 'if on edge, bounce',
+      previousStatement: null, nextStatement: null, colour: '#4C97FF',
+      tooltip: 'Bounce off the edge of the stage',
+    });
+  }
+};
+
+// ── set_rotation_style ──
+motionBlocks['set_rotation_style'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'set_rotation_style',
+      message0: 'set rotation style %1',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'STYLE',
+        options: [
+          ['left-right', 'left-right'],
+          ['don\'t rotate', 'don\'t rotate'],
+          ['all around', 'all around'],
+        ],
+      }],
+      previousStatement: null, nextStatement: null, colour: '#4C97FF',
+      tooltip: 'Set how the sprite rotates',
+    });
+  }
+};
+

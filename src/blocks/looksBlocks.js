@@ -118,3 +118,156 @@ looksBlocks['hide_block'] = {
     });
   }
 };
+
+looksBlocks['switch_backdrop'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'switch_backdrop',
+      message0: 'switch backdrop to %1',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'BACKDROP',
+        options: [['backdrop1', 'backdrop1']],
+      }],
+      previousStatement: null, nextStatement: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['next_backdrop'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'next_backdrop',
+      message0: 'next backdrop',
+      previousStatement: null, nextStatement: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['change_effect'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'change_effect',
+      message0: 'change %1 effect by %2',
+      args0: [
+        {
+          type: 'field_dropdown',
+          name: 'EFFECT',
+          options: [
+            ['color', 'COLOR'], ['fisheye', 'FISHEYE'], ['whirl', 'WHIRL'],
+            ['pixelate', 'PIXELATE'], ['mosaic', 'MOSAIC'],
+            ['brightness', 'BRIGHTNESS'], ['ghost', 'GHOST'],
+          ],
+        },
+        { type: 'input_value', name: 'CHANGE', check: 'Number' },
+      ],
+      previousStatement: null, nextStatement: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['set_effect'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'set_effect',
+      message0: 'set %1 effect to %2',
+      args0: [
+        {
+          type: 'field_dropdown',
+          name: 'EFFECT',
+          options: [
+            ['color', 'COLOR'], ['fisheye', 'FISHEYE'], ['whirl', 'WHIRL'],
+            ['pixelate', 'PIXELATE'], ['mosaic', 'MOSAIC'],
+            ['brightness', 'BRIGHTNESS'], ['ghost', 'GHOST'],
+          ],
+        },
+        { type: 'input_value', name: 'VALUE', check: 'Number' },
+      ],
+      previousStatement: null, nextStatement: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['go_to_layer'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'go_to_layer',
+      message0: 'go to %1 layer',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'FRONT_BACK',
+        options: [['front', 'front'], ['back', 'back']],
+      }],
+      previousStatement: null, nextStatement: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['go_layers'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'go_layers',
+      message0: 'go %1 %2 layers',
+      args0: [
+        {
+          type: 'field_dropdown',
+          name: 'FORWARD_BACKWARD',
+          options: [['forward', 'forward'], ['backward', 'backward']],
+        },
+        { type: 'input_value', name: 'NUM', check: 'Number' },
+      ],
+      previousStatement: null, nextStatement: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['costume_reporter'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'costume_reporter',
+      message0: 'costume %1',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'NUMBER_NAME',
+        options: [['number', 'number'], ['name', 'name']],
+      }],
+      output: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['backdrop_reporter'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'backdrop_reporter',
+      message0: 'backdrop %1',
+      args0: [{
+        type: 'field_dropdown',
+        name: 'NUMBER_NAME',
+        options: [['number', 'number'], ['name', 'name']],
+      }],
+      output: null, colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['size_reporter'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'size_reporter',
+      message0: 'size',
+      output: 'Number', colour: '#9966FF',
+    });
+  }
+};
+
+looksBlocks['take_stage_snapshot'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'take_stage_snapshot',
+      message0: 'take stage snapshot',
+      previousStatement: null, nextStatement: null, colour: '#9966FF',
+    });
+  }
+};
+

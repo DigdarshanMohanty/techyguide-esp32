@@ -6,7 +6,7 @@
 
 import * as Blockly from "blockly";
 
-// ESP32 Blocks & Generators
+// ESP32 Blocks & Generators (existing)
 import { blocks as printblock } from "./blocks/print";
 import { blocks1 as textBlocks } from "./blocks/text";
 import { blocks2 as waitBlocks } from "./blocks/wait";
@@ -15,6 +15,28 @@ import { forBlock as printGen } from "./generators/print";
 import { forBlock as addTextGen } from "./generators/addText";
 import { forBlock as waitGen } from "./generators/wait";
 import { forBlock as pinGen } from "./generators/digital_pin";
+
+// ESP32 Blocks & Generators (new modules)
+import { actuatorBlocks } from "./blocks/esp32/actuatorBlocks";
+import { sensorBlocks } from "./blocks/esp32/sensorBlocks";
+import { communicationBlocks } from "./blocks/esp32/communicationBlocks";
+import { inputBlocks } from "./blocks/esp32/inputBlocks";
+import { terminalBlocks } from "./blocks/esp32/terminalBlocks";
+import { notificationBlocks } from "./blocks/esp32/notificationBlocks";
+import { cameraBlocks } from "./blocks/esp32/cameraBlocks";
+import { iotBlocks } from "./blocks/esp32/iotBlocks";
+import { dabbleBlocks } from "./blocks/esp32/dabbleBlocks";
+import { esp32CoreBlocks } from "./blocks/esp32/esp32CoreBlocks";
+import { forBlock as actuatorGen } from "./generators/esp32/actuatorGen";
+import { forBlock as sensorGen } from "./generators/esp32/sensorGen";
+import { forBlock as communicationGen } from "./generators/esp32/communicationGen";
+import { forBlock as inputGen } from "./generators/esp32/inputGen";
+import { forBlock as terminalGen } from "./generators/esp32/terminalGen";
+import { forBlock as notificationGen } from "./generators/esp32/notificationGen";
+import { forBlock as cameraGen } from "./generators/esp32/cameraGen";
+import { forBlock as iotGen } from "./generators/esp32/iotGen";
+import { forBlock as dabbleGen } from "./generators/esp32/dabbleGen";
+import { forBlock as esp32CoreGen } from "./generators/esp32/esp32CoreGen";
 import { pythonGenerator } from "blockly/python";
 
 // Scratch Blocks & Runtime
@@ -23,6 +45,7 @@ import { looksBlocks } from "./blocks/looksBlocks";
 import { eventBlocks } from "./blocks/eventBlocks";
 import { controlBlocks } from "./blocks/controlBlocks";
 import { sensingBlocks } from "./blocks/sensingBlocks";
+import { soundBlocks } from "./blocks/soundBlocks";
 import { scratchToolbox } from "./scratchToolbox";
 import { BlockInterpreter } from "./engine/BlockInterpreter";
 import { StageRenderer } from "./engine/StageRenderer";
@@ -45,14 +68,39 @@ Blockly.common.defineBlocks(textBlocks);
 Blockly.common.defineBlocks(waitBlocks);
 Blockly.common.defineBlocks(pinBlocks);
 
+// New ESP32 module blocks
+Blockly.common.defineBlocks(actuatorBlocks);
+Blockly.common.defineBlocks(sensorBlocks);
+Blockly.common.defineBlocks(communicationBlocks);
+Blockly.common.defineBlocks(inputBlocks);
+Blockly.common.defineBlocks(terminalBlocks);
+Blockly.common.defineBlocks(notificationBlocks);
+Blockly.common.defineBlocks(cameraBlocks);
+Blockly.common.defineBlocks(iotBlocks);
+Blockly.common.defineBlocks(dabbleBlocks);
+Blockly.common.defineBlocks(esp32CoreBlocks);
+
 Object.assign(pythonGenerator.forBlock, printGen);
 Object.assign(pythonGenerator.forBlock, addTextGen);
 Object.assign(pythonGenerator.forBlock, waitGen);
 Object.assign(pythonGenerator.forBlock, pinGen);
 
+// New ESP32 module generators
+Object.assign(pythonGenerator.forBlock, actuatorGen);
+Object.assign(pythonGenerator.forBlock, sensorGen);
+Object.assign(pythonGenerator.forBlock, communicationGen);
+Object.assign(pythonGenerator.forBlock, inputGen);
+Object.assign(pythonGenerator.forBlock, terminalGen);
+Object.assign(pythonGenerator.forBlock, notificationGen);
+Object.assign(pythonGenerator.forBlock, cameraGen);
+Object.assign(pythonGenerator.forBlock, iotGen);
+Object.assign(pythonGenerator.forBlock, dabbleGen);
+Object.assign(pythonGenerator.forBlock, esp32CoreGen);
+
 // ── 2. Register Scratch Blocks ──────────────────────────────
 Blockly.common.defineBlocks(motionBlocks);
 Blockly.common.defineBlocks(looksBlocks);
+Blockly.common.defineBlocks(soundBlocks);
 Blockly.common.defineBlocks(eventBlocks);
 Blockly.common.defineBlocks(controlBlocks);
 Blockly.common.defineBlocks(sensingBlocks);
@@ -67,64 +115,60 @@ const ws = Blockly.inject(blocklyDiv, {
 addCustomToolbar(); // Add color circles for ESP32 toolbox (if used)
 
 // ── 4. Initialize Scratch Engine (Stage & Runtime) ──────────
-const canvas = document.getElementById("stageCanvas");
-const renderer = new StageRenderer(canvas);
+const stageContainer = document.getElementById("stageCanvas");
+const renderer = new StageRenderer(stageContainer);
 const interpreter = new BlockInterpreter(spriteStore, ws);
 interpreter.setRenderer(renderer);
 
-// Add initial sprite
-spriteStore.addSprite("Cat");
+// PixiJS v8 Application.init() is async — wrap setup
+(async () => {
+  await renderer.init();
 
-// Wire StageRenderer to SpriteStore
-spriteStore.on((event) => {
+  // Add initial sprite
+  spriteStore.addSprite("Cat");
+
+  // Wire StageRenderer to SpriteStore
+  spriteStore.on((event) => {
+    renderer.setSprites(spriteStore.getAllSprites());
+  });
   renderer.setSprites(spriteStore.getAllSprites());
-});
-renderer.setSprites(spriteStore.getAllSprites()); // Initial set
 
-// Start render loop
-renderer.start();
-
-// Handle sprite selection changes
-spriteStore.on((event, sprite) => {
-  if (event === "select" && sprite) {
-    // Save current workspace state to the previously selected sprite
-    // (Handled automatically by the block change listener, but we could force save)
-    
-    // Load the newly selected sprite's workspace
-    ws.clear();
-    if (sprite.workspaceState) {
-        Blockly.serialization.workspaces.load(sprite.workspaceState, ws);
+  // Handle sprite selection changes
+  spriteStore.on((event, sprite) => {
+    if (event === "select" && sprite) {
+      ws.clear();
+      if (sprite.workspaceState) {
+          Blockly.serialization.workspaces.load(sprite.workspaceState, ws);
+      }
     }
-  }
-});
+  });
 
-// Continuously save workspace to selected sprite
-ws.addChangeListener((e) => {
-    if (e.isUiEvent || ws.isDragging()) return;
-    
-    // In Scratch mode, save to the selected sprite.
-    if (getCurrentMode() === "scratch") {
-        const selectedId = spriteStore.selectedSpriteId;
-        if (selectedId) {
-            const state = Blockly.serialization.workspaces.save(ws);
-            spriteStore.saveWorkspaceState(selectedId, state);
-        }
-    }
-    // (Also save to global localstorage for fallback if needed)
-});
+  // Continuously save workspace to selected sprite
+  ws.addChangeListener((e) => {
+      if (e.isUiEvent || ws.isDragging()) return;
+      
+      if (getCurrentMode() === "scratch") {
+          const selectedId = spriteStore.selectedSpriteId;
+          if (selectedId) {
+              const state = Blockly.serialization.workspaces.save(ws);
+              spriteStore.saveWorkspaceState(selectedId, state);
+          }
+      }
+  });
 
-// Green Flag & Stop Buttons
-document.getElementById("greenFlagBtn")?.addEventListener("click", () => {
-    spriteStore.resetAll(); // Reset positions before running
-    interpreter.startAll();
-});
+  // Green Flag & Stop Buttons
+  document.getElementById("greenFlagBtn")?.addEventListener("click", () => {
+      spriteStore.resetAll();
+      interpreter.startAll();
+  });
 
-document.getElementById("stopBtn")?.addEventListener("click", () => {
-    interpreter.stopAll();
-});
+  document.getElementById("stopBtn")?.addEventListener("click", () => {
+      interpreter.stopAll();
+  });
 
-// Initialize sprite panel UI
-initSpritePanel();
+  // Initialize sprite panel UI
+  initSpritePanel();
+})();
 
 // ── 5. Mode Switcher & Dual Mode Logic ──────────────────────
 initModeSwitcher((newMode) => {

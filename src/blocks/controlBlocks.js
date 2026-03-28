@@ -142,3 +142,55 @@ controlBlocks['delete_clone'] = {
     });
   }
 };
+
+controlBlocks['wait_until'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'wait_until',
+      message0: 'wait until %1',
+      args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }],
+      previousStatement: null,
+      nextStatement: null,
+      colour: '#FFAB19',
+      tooltip: 'Wait until a condition is true',
+    });
+  }
+};
+
+controlBlocks['repeat_until'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'repeat_until',
+      message0: 'repeat until %1',
+      args0: [{ type: 'input_value', name: 'CONDITION', check: 'Boolean' }],
+      message1: '%1',
+      args1: [{ type: 'input_statement', name: 'SUBSTACK' }],
+      previousStatement: null,
+      nextStatement: null,
+      colour: '#FFAB19',
+      tooltip: 'Repeat blocks until a condition is true',
+    });
+  }
+};
+
+controlBlocks['count_loop'] = {
+  init: function() {
+    this.jsonInit({
+      type: 'count_loop',
+      message0: 'count %1 from %2 to %3 in steps of %4',
+      args0: [
+        { type: 'field_variable', name: 'VAR', variable: 'i' },
+        { type: 'input_value', name: 'FROM', check: 'Number' },
+        { type: 'input_value', name: 'TO', check: 'Number' },
+        { type: 'input_value', name: 'STEP', check: 'Number' },
+      ],
+      message1: '%1',
+      args1: [{ type: 'input_statement', name: 'SUBSTACK' }],
+      previousStatement: null,
+      nextStatement: null,
+      colour: '#FFAB19',
+      tooltip: 'Count with a variable from start to end',
+    });
+  }
+};
+

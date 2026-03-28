@@ -1,18 +1,18 @@
 /**
- * StageRenderer — Draws sprites on a 480×360 HTML5 Canvas.
+ * StageRenderer — Renders sprites on a 480×360 stage using PixiJS v8.
  * Uses Scratch coordinate system: center-origin, x: -240..240, y: -180..180.
- * Y-axis is inverted from canvas (positive Y = up in Scratch, down in canvas).
  */
 
+import { Application, Sprite as PixiSprite, Graphics, Text, TextStyle, Container, Texture, Assets } from 'pixi.js';
+import spriteStore from './SpriteStore.js';
+
 export class StageRenderer {
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+  constructor(containerEl) {
+    this.containerEl = containerEl;
     this.width = 480;
     this.height = 360;
     this.sprites = [];
     this.backdrop = '#ffffff';
-    this.running = false;
 
     // Mouse tracking (Scratch coordinates)
     this.mouseX = 0;
@@ -23,7 +23,69 @@ export class StageRenderer {
     this._onSpriteClick = null;
     this._onStageClick = null;
 
-    this._initMouseTracking();
+    // PixiJS state
+    this.app = null;
+    this._pixiSprites = new Map();       // spriteId → PIXI.Sprite
+    this._penContainer = null;           // Graphics layer for pen trails
+    this._spriteContainer = null;        // Container for all sprite display objects
+    this._bubbleContainer = null;        // Container for speech bubbles
+    this._bubbleObjects = new Map();     // spriteId → { container, bg, text, tail }
+    this._penGraphics = null;
+  }
+
+  /**
+   * Initialize the PixiJS application (async in v8).
+   */
+  async init() {
+    this.app = new Application();
+    await this.app.init({
+      width: this.width,
+      height: this.height,
+      background: this.backdrop,
+      antialias: true,
+      resolution: window.devicePixelRatio || 1,
+      autoDensity: true,
+    });
+
+    // Mount canvas into container
+    this.containerEl.appendChild(this.app.canvas);
+    this.app.canvas.style.width = '100%';
+    this.app.canvas.style.height = '100%';
+
+    // Create layered containers: pen → sprites → bubbles
+    this._penContainer = new Container();
+    this._spriteContainer = new Container();
+    this._bubbleContainer = new Container();
+    this.app.stage.addChild(this._penContainer);
+    this.app.stage.addChild(this._spriteContainer);
+    this.app.stage.addChild(this._bubbleContainer);
+
+    // Pen trails graphics object
+    this._penGraphics = new Graphics();
+    this._penContainer.addChild(this._penGraphics);
+
+    // Mouse tracking via PixiJS events
+    this.app.stage.eventMode = 'static';
+    this.app.stage.hitArea = this.app.screen;
+
+    this.app.stage.on('pointermove', (e) => {
+      const pos = e.global;
+      this.mouseX = Math.round(pos.x - 240);
+      this.mouseY = Math.round(180 - pos.y);
+    });
+
+    this.app.stage.on('pointerdown', () => { this.mouseDown = true; });
+    this.app.stage.on('pointerup', () => { this.mouseDown = false; });
+
+    // Stage click (background only)
+    this.app.stage.on('pointerdown', (e) => {
+      if (e.target === this.app.stage && this._onStageClick) {
+        this._onStageClick();
+      }
+    });
+
+    // Start sync loop via ticker
+    this.app.ticker.add(() => this._syncFrame());
   }
 
   /**
@@ -34,238 +96,265 @@ export class StageRenderer {
   }
 
   /**
-   * Start the render loop.
+   * Start the render loop (noop — PixiJS ticker handles this).
    */
   start() {
-    if (this.running) return;
-    this.running = true;
-    this._loop();
+    // PixiJS auto-renders via its internal ticker
   }
 
   /**
    * Stop the render loop.
    */
   stop() {
-    this.running = false;
+    if (this.app) this.app.ticker.stop();
   }
 
   /**
-   * One render frame.
+   * Each frame: sync sprite data model → PIXI display objects.
    */
-  _loop() {
-    if (!this.running) return;
-    this.render();
-    requestAnimationFrame(() => this._loop());
+  _syncFrame() {
+    this._syncPenTrails();
+    this._syncSpriteDisplayObjects();
+    this._syncBubbles();
   }
 
   /**
-   * Render all sprites onto the canvas.
+   * Sync pen trails to the pen graphics layer.
    */
-  render() {
-    const ctx = this.ctx;
+  _syncPenTrails() {
+    const g = this._penGraphics;
+    g.clear();
 
-    // ── Clear & draw backdrop ──
-    ctx.fillStyle = this.backdrop;
-    ctx.fillRect(0, 0, this.width, this.height);
-
-    // ── Draw pen trails ──
     for (const sprite of this.sprites) {
       for (const trail of sprite.penTrails) {
-        const p1 = this._toCanvas(trail.x1, trail.y1);
-        const p2 = this._toCanvas(trail.x2, trail.y2);
-        ctx.strokeStyle = trail.color;
-        ctx.lineWidth = trail.size;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
+        const p1 = this._toPixi(trail.x1, trail.y1);
+        const p2 = this._toPixi(trail.x2, trail.y2);
+        g.moveTo(p1.x, p1.y);
+        g.lineTo(p2.x, p2.y);
+        g.stroke({ width: trail.size, color: trail.color });
       }
     }
-
-    // ── Draw sprites in z-order ──
-    for (const sprite of this.sprites) {
-      if (!sprite.visible) continue;
-      this._drawSprite(sprite);
-    }
-
-    // ── Draw speech bubbles on top ──
-    for (const sprite of this.sprites) {
-      if (!sprite.visible) continue;
-      this._drawBubble(sprite);
-    }
   }
 
   /**
-   * Draw a single sprite.
+   * Create / update / remove PIXI.Sprite display objects to match the data model.
    */
-  _drawSprite(sprite) {
-    const ctx = this.ctx;
-    const pos = this._toCanvas(sprite.x, sprite.y);
-    const scale = sprite.size / 100;
-    const img = sprite.getCostumeImage();
+  _syncSpriteDisplayObjects() {
+    const activeIds = new Set();
 
-    ctx.save();
-    ctx.translate(pos.x, pos.y);
-    ctx.rotate(((sprite.direction - 90) * Math.PI) / 180);
-    ctx.globalAlpha = sprite.opacity;
+    for (let i = 0; i < this.sprites.length; i++) {
+      const sprite = this.sprites[i];
+      activeIds.add(sprite.id);
 
-    if (img && img.complete && img.naturalWidth > 0) {
-      const w = img.naturalWidth * scale;
-      const h = img.naturalHeight * scale;
-      ctx.drawImage(img, -w / 2, -h / 2, w, h);
-    } else {
-      // Fallback: draw a colored circle
-      const r = 24 * scale;
-      ctx.fillStyle = '#4C97FF';
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fill();
+      let pixiSprite = this._pixiSprites.get(sprite.id);
 
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${Math.round(16 * scale)}px Inter, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🐱', 0, 0);
-    }
+      if (!pixiSprite) {
+        // Create new PIXI.Sprite
+        pixiSprite = new PixiSprite();
+        pixiSprite.anchor.set(0.5);
+        pixiSprite.eventMode = 'static';
+        pixiSprite.cursor = 'pointer';
+        pixiSprite._spriteRef = sprite;
+        pixiSprite._dragging = false;
 
-    ctx.restore();
-  }
-
-  /**
-   * Draw a speech/think bubble above a sprite.
-   */
-  _drawBubble(sprite) {
-    if (!sprite.sayBubble) return;
-
-    // Check expiry
-    if (sprite.sayBubble.expiresAt && Date.now() > sprite.sayBubble.expiresAt) {
-      sprite.clearBubble();
-      return;
-    }
-
-    const ctx = this.ctx;
-    const pos = this._toCanvas(sprite.x, sprite.y);
-    const text = sprite.sayBubble.text;
-    const isThink = sprite.sayBubble.type === 'think';
-
-    ctx.save();
-    ctx.font = '12px Inter, sans-serif';
-    const metrics = ctx.measureText(text);
-    const textW = metrics.width;
-    const padding = 10;
-    const bubbleW = textW + padding * 2;
-    const bubbleH = 28;
-    const bubbleX = pos.x + 20;
-    const bubbleY = pos.y - 50;
-
-    // Bubble background
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#c4c4c4';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    const r = 8;
-    ctx.roundRect(bubbleX, bubbleY, bubbleW, bubbleH, r);
-    ctx.fill();
-    ctx.stroke();
-
-    // Tail
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#c4c4c4';
-    if (isThink) {
-      // Think bubble: small circles
-      ctx.beginPath();
-      ctx.arc(bubbleX + 8, bubbleY + bubbleH + 6, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(bubbleX + 3, bubbleY + bubbleH + 14, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    } else {
-      // Say bubble: triangle tail
-      ctx.beginPath();
-      ctx.moveTo(bubbleX + 8, bubbleY + bubbleH);
-      ctx.lineTo(bubbleX + 4, bubbleY + bubbleH + 10);
-      ctx.lineTo(bubbleX + 18, bubbleY + bubbleH);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // Text
-    ctx.fillStyle = '#333';
-    ctx.font = '12px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, bubbleX + padding, bubbleY + bubbleH / 2);
-
-    ctx.restore();
-  }
-
-  /**
-   * Convert Scratch coordinates to canvas pixel coordinates.
-   * Scratch: center is (0,0), +x right, +y up
-   * Canvas: top-left is (0,0), +x right, +y down
-   */
-  _toCanvas(sx, sy) {
-    return {
-      x: 240 + sx,
-      y: 180 - sy
-    };
-  }
-
-  /**
-   * Convert canvas pixel coordinates to Scratch coordinates.
-   */
-  _fromCanvas(cx, cy) {
-    return {
-      x: cx - 240,
-      y: 180 - cy
-    };
-  }
-
-  /**
-   * Initialize mouse tracking on the canvas.
-   */
-  _initMouseTracking() {
-    this.canvas.addEventListener('mousemove', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const scaleX = this.width / rect.width;
-      const scaleY = this.height / rect.height;
-      const cx = (e.clientX - rect.left) * scaleX;
-      const cy = (e.clientY - rect.top) * scaleY;
-      const pos = this._fromCanvas(cx, cy);
-      this.mouseX = Math.round(pos.x);
-      this.mouseY = Math.round(pos.y);
-    });
-
-    this.canvas.addEventListener('mousedown', () => { this.mouseDown = true; });
-    this.canvas.addEventListener('mouseup', () => { this.mouseDown = false; });
-
-    this.canvas.addEventListener('click', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const scaleX = this.width / rect.width;
-      const scaleY = this.height / rect.height;
-      const cx = (e.clientX - rect.left) * scaleX;
-      const cy = (e.clientY - rect.top) * scaleY;
-
-      // Check if clicking on a sprite (reverse z-order to get top sprite first)
-      for (let i = this.sprites.length - 1; i >= 0; i--) {
-        const sprite = this.sprites[i];
-        if (!sprite.visible) continue;
-        const pos = this._toCanvas(sprite.x, sprite.y);
-        const r = 24 * (sprite.size / 100);
-        const dx = cx - pos.x;
-        const dy = cy - pos.y;
-        if (dx * dx + dy * dy <= r * r) {
+        // ── Drag & Drop ──
+        pixiSprite.on('pointerdown', (e) => {
+          e.stopPropagation();
+          pixiSprite._dragging = true;
+          pixiSprite._dragOffset = {
+            x: e.global.x - pixiSprite.x,
+            y: e.global.y - pixiSprite.y,
+          };
+          pixiSprite.alpha = 0.85;
           if (this._onSpriteClick) this._onSpriteClick(sprite);
-          return;
+        });
+
+        pixiSprite.on('globalpointermove', (e) => {
+          if (!pixiSprite._dragging) return;
+          const newX = e.global.x - pixiSprite._dragOffset.x;
+          const newY = e.global.y - pixiSprite._dragOffset.y;
+          pixiSprite.x = newX;
+          pixiSprite.y = newY;
+          // Sync back to Scratch data model
+          sprite.x = Math.round(newX - 240);
+          sprite.y = Math.round(180 - newY);
+          // Update sprite panel live
+          spriteStore._emit('update', sprite);
+        });
+
+        const endDrag = () => {
+          if (!pixiSprite._dragging) return;
+          pixiSprite._dragging = false;
+          pixiSprite.alpha = sprite.opacity;
+          // Final update so panel shows correct X/Y
+          spriteStore._emit('update', sprite);
+        };
+        pixiSprite.on('pointerup', endDrag);
+        pixiSprite.on('pointerupoutside', endDrag);
+
+        this._spriteContainer.addChild(pixiSprite);
+        this._pixiSprites.set(sprite.id, pixiSprite);
+      }
+
+      // Update texture from costume
+      const costumeImg = sprite.getCostumeImage();
+      if (costumeImg && costumeImg.complete && costumeImg.naturalWidth > 0) {
+        const tex = Texture.from(costumeImg);
+        if (pixiSprite.texture !== tex) {
+          pixiSprite.texture = tex;
         }
       }
 
-      if (this._onStageClick) this._onStageClick();
-    });
+      // Sync position (Scratch → Pixi coordinates) — skip if user is dragging
+      if (!pixiSprite._dragging) {
+        const pos = this._toPixi(sprite.x, sprite.y);
+        pixiSprite.x = pos.x;
+        pixiSprite.y = pos.y;
+      }
+
+      // Sync rotation (Scratch direction: 0=up, 90=right → Pixi radians)
+      pixiSprite.rotation = ((sprite.direction - 90) * Math.PI) / 180;
+
+      // Sync scale
+      const scale = sprite.size / 100;
+      pixiSprite.scale.set(scale);
+
+      // Sync visibility & alpha
+      pixiSprite.visible = sprite.visible;
+      pixiSprite.alpha = sprite.opacity;
+
+      // Z-order
+      pixiSprite.zIndex = i;
+    }
+
+    // Remove display objects for sprites that no longer exist
+    for (const [id, pixiSprite] of this._pixiSprites) {
+      if (!activeIds.has(id)) {
+        this._spriteContainer.removeChild(pixiSprite);
+        pixiSprite.destroy();
+        this._pixiSprites.delete(id);
+      }
+    }
+
+    this._spriteContainer.sortChildren();
+  }
+
+  /**
+   * Sync speech/think bubbles.
+   */
+  _syncBubbles() {
+    const activeIds = new Set();
+
+    for (const sprite of this.sprites) {
+      if (!sprite.visible || !sprite.sayBubble) {
+        // Remove bubble if it exists
+        if (this._bubbleObjects.has(sprite.id)) {
+          this._removeBubble(sprite.id);
+        }
+        continue;
+      }
+
+      // Check expiry
+      if (sprite.sayBubble.expiresAt && Date.now() > sprite.sayBubble.expiresAt) {
+        sprite.clearBubble();
+        this._removeBubble(sprite.id);
+        continue;
+      }
+
+      activeIds.add(sprite.id);
+      const bubble = sprite.sayBubble;
+      const pos = this._toPixi(sprite.x, sprite.y);
+
+      let obj = this._bubbleObjects.get(sprite.id);
+
+      if (!obj || obj._lastText !== bubble.text || obj._lastType !== bubble.type) {
+        // Recreate bubble
+        this._removeBubble(sprite.id);
+
+        const style = new TextStyle({
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 12,
+          fill: '#333333',
+        });
+        const textObj = new Text({ text: bubble.text, style });
+        const padding = 10;
+        const bubbleW = textObj.width + padding * 2;
+        const bubbleH = 28;
+
+        const bg = new Graphics();
+        bg.roundRect(0, 0, bubbleW, bubbleH, 8);
+        bg.fill('#ffffff');
+        bg.stroke({ width: 1.5, color: '#c4c4c4' });
+
+        // Tail
+        const tail = new Graphics();
+        if (bubble.type === 'think') {
+          tail.circle(8, bubbleH + 6, 4);
+          tail.fill('#ffffff');
+          tail.stroke({ width: 1.5, color: '#c4c4c4' });
+          tail.circle(3, bubbleH + 14, 2.5);
+          tail.fill('#ffffff');
+          tail.stroke({ width: 1.5, color: '#c4c4c4' });
+        } else {
+          tail.moveTo(8, bubbleH);
+          tail.lineTo(4, bubbleH + 10);
+          tail.lineTo(18, bubbleH);
+          tail.closePath();
+          tail.fill('#ffffff');
+          tail.stroke({ width: 1.5, color: '#c4c4c4' });
+        }
+
+        textObj.x = padding;
+        textObj.y = (bubbleH - textObj.height) / 2;
+
+        const container = new Container();
+        container.addChild(bg, tail, textObj);
+
+        this._bubbleContainer.addChild(container);
+        obj = { container, _lastText: bubble.text, _lastType: bubble.type };
+        this._bubbleObjects.set(sprite.id, obj);
+      }
+
+      // Position bubble above sprite
+      obj.container.x = pos.x + 20;
+      obj.container.y = pos.y - 50;
+    }
+
+    // Clean up bubbles for deleted sprites
+    for (const [id] of this._bubbleObjects) {
+      if (!this.sprites.find(s => s.id === id)) {
+        this._removeBubble(id);
+      }
+    }
+  }
+
+  _removeBubble(spriteId) {
+    const obj = this._bubbleObjects.get(spriteId);
+    if (obj) {
+      this._bubbleContainer.removeChild(obj.container);
+      obj.container.destroy({ children: true });
+      this._bubbleObjects.delete(spriteId);
+    }
+  }
+
+  /**
+   * Convert Scratch coordinates to PixiJS pixel coordinates.
+   */
+  _toPixi(sx, sy) {
+    return {
+      x: 240 + sx,
+      y: 180 - sy,
+    };
+  }
+
+  /**
+   * Convert PixiJS pixel coordinates to Scratch coordinates.
+   */
+  _fromPixi(px, py) {
+    return {
+      x: px - 240,
+      y: 180 - py,
+    };
   }
 
   onSpriteClick(callback) {
@@ -274,5 +363,12 @@ export class StageRenderer {
 
   onStageClick(callback) {
     this._onStageClick = callback;
+  }
+
+  /**
+   * Get the PixiJS app instance (for thumbnail extraction, etc.).
+   */
+  getApp() {
+    return this.app;
   }
 }
