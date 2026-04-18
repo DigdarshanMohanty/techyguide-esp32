@@ -10,6 +10,10 @@ class SpriteStore {
     this.sprites = [];
     this.selectedSpriteId = null;
     this._listeners = [];
+
+    // ── Backdrop state ──
+    this._backdrops = [];         // user-added backdrops
+    this._currentBackdrop = null; // { name, type, value }
   }
 
   /**
@@ -132,6 +136,50 @@ class SpriteStore {
       s.penTrails = [];
     });
     this._emit('update', null);
+  }
+
+  // ── Backdrop Management ──────────────────────────────
+
+  /**
+   * Set the current backdrop.
+   * @param {{ name: string, type: string, value: string }} backdropDef
+   */
+  setBackdrop(backdropDef) {
+    this._currentBackdrop = backdropDef;
+    this._emit('backdrop', backdropDef);
+  }
+
+  /**
+   * Get the current backdrop definition.
+   */
+  getCurrentBackdrop() {
+    return this._currentBackdrop;
+  }
+
+  /**
+   * Add a custom backdrop to the library.
+   */
+  addBackdropToLibrary(backdropDef) {
+    this._backdrops.push(backdropDef);
+  }
+
+  /**
+   * Get all user-added backdrops.
+   */
+  getBackdrops() {
+    return this._backdrops;
+  }
+
+  /**
+   * Get all backdrop names (built-in not tracked here; used by event blocks).
+   */
+  getBackdropNames() {
+    const names = [];
+    if (this._currentBackdrop) names.push(this._currentBackdrop.name);
+    this._backdrops.forEach(b => {
+      if (!names.includes(b.name)) names.push(b.name);
+    });
+    return names;
   }
 }
 

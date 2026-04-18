@@ -3,6 +3,8 @@
  * and the Stage backdrop list, precisely matching the PictoBlox/Scratch 3 style.
  */
 import spriteStore from '../engine/SpriteStore';
+import { openSpriteChooser } from './SpriteChooserModal';
+import { openBackdropChooser } from './BackdropChooserModal';
 
 export function initSpritePanel() {
   const container = document.getElementById('spritePanelContainer');
@@ -72,10 +74,10 @@ export function initSpritePanel() {
           <br>
           <small>Backdrops</small>
         </div>
-        <div class="backdrop-thumb selected">
-          <div class="backdrop-preview"></div>
+        <div class="backdrop-thumb selected" id="backdropPreview">
+          <div class="backdrop-preview" id="backdropPreviewInner"></div>
         </div>
-        <button class="fab-btn add-backdrop-fab" title="Choose a Backdrop">
+        <button class="fab-btn add-backdrop-fab" id="addBackdropBtn" title="Choose a Backdrop">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
         </button>
       </div>
@@ -86,9 +88,10 @@ export function initSpritePanel() {
   renderPanel();
 
   spriteStore.on((event) => {
-    // Optimisation: only fully re-render on add/remove. 
-    // On update/select, just update the visual selection and properties block
     renderPanel();
+    if (event === 'backdrop') {
+      updateBackdropPreview();
+    }
   });
 }
 
@@ -101,6 +104,7 @@ function bindEvents() {
   const propShow = document.getElementById('propShow');
   const propHide = document.getElementById('propHide');
   const addSpriteBtn = document.getElementById('addSpriteBtn');
+  const addBackdropBtn = document.getElementById('addBackdropBtn');
 
   const updateProp = (fn) => {
     const s = spriteStore.getSelectedSprite();
@@ -119,10 +123,32 @@ function bindEvents() {
   propShow.addEventListener('click', () => updateProp(s => s.visible = true));
   propHide.addEventListener('click', () => updateProp(s => s.visible = false));
 
+  // ── Open Sprite Chooser Modal ──
   addSpriteBtn.addEventListener('click', () => {
-    const i = spriteStore.getAllSprites().length + 1;
-    spriteStore.addSprite(`Sprite${i}`);
+    openSpriteChooser();
   });
+
+  // ── Open Backdrop Chooser Modal ──
+  addBackdropBtn.addEventListener('click', () => {
+    openBackdropChooser();
+  });
+}
+
+function updateBackdropPreview() {
+  const preview = document.getElementById('backdropPreviewInner');
+  if (!preview) return;
+  const bd = spriteStore.getCurrentBackdrop();
+  if (!bd) {
+    preview.style.background = '#fff';
+    return;
+  }
+  if (bd.type === 'color') {
+    preview.style.background = bd.value;
+  } else if (bd.type === 'gradient') {
+    preview.style.background = bd.value;
+  } else if (bd.type === 'svg' || bd.type === 'image') {
+    preview.style.background = `url("${bd.value}") center/cover no-repeat`;
+  }
 }
 
 function renderPanel() {
@@ -185,4 +211,7 @@ function renderPanel() {
 
     list.appendChild(thumb);
   });
+
+  // Update backdrop preview too
+  updateBackdropPreview();
 }

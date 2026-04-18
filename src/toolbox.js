@@ -618,7 +618,7 @@ export const toolbox = {
       categorystyle: "esp32_category",
       contents: [
         // ── ESP32 Core ──
-        { kind: "label", text: "ESP32" },
+        { kind: "label", text: "ESP32", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_when_starts" },
         { kind: "block", type: "esp32_read_digital_pin" },
         { kind: "block", type: "esp32_read_analog_pin" },
@@ -630,14 +630,14 @@ export const toolbox = {
         { kind: "block", type: "esp32_map_value" },
 
         // ── Existing blocks ──
-        { kind: "label", text: "General" },
+        { kind: "label", text: "General", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "print_block" },
         { kind: "block", type: "add_text" },
         { kind: "block", type: "wait_block" },
         { kind: "block", type: "digital_write" },
 
         // ── Actuators ──
-        { kind: "label", text: "Actuators" },
+        { kind: "label", text: "Actuators", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_enable_servo" },
         { kind: "block", type: "esp32_set_servo_angle" },
         { kind: "block", type: "esp32_free_motor" },
@@ -648,7 +648,7 @@ export const toolbox = {
         { kind: "block", type: "esp32_pin_state_monitor" },
 
         // ── Sensors ──
-        { kind: "label", text: "Sensors" },
+        { kind: "label", text: "Sensors", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_ultrasonic" },
         { kind: "block", type: "esp32_digital_sensor" },
         { kind: "block", type: "esp32_dht" },
@@ -656,12 +656,12 @@ export const toolbox = {
         { kind: "block", type: "esp32_potentiometer" },
 
         // ── Inputs Module ──
-        { kind: "label", text: "Inputs Module" },
+        { kind: "label", text: "Inputs Module", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_tactile_switch" },
         { kind: "block", type: "esp32_slide_switch" },
 
         // ── Communication ──
-        { kind: "label", text: "Communication" },
+        { kind: "label", text: "Communication", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_bt_serial_baud" },
         { kind: "block", type: "esp32_set_serial_pins" },
         { kind: "block", type: "esp32_bt_configure" },
@@ -673,38 +673,38 @@ export const toolbox = {
         { kind: "block", type: "esp32_serial_write" },
 
         // ── Bluetooth ──
-        { kind: "label", text: "Bluetooth" },
+        { kind: "label", text: "Bluetooth", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_bt_data_available" },
         { kind: "block", type: "esp32_bt_read" },
         { kind: "block", type: "esp32_bt_send" },
 
         // ── Terminal Module ──
-        { kind: "label", text: "Terminal Module" },
+        { kind: "label", text: "Terminal Module", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_terminal_data" },
         { kind: "block", type: "esp32_terminal_number" },
         { kind: "block", type: "esp32_terminal_send" },
 
         // ── Notification & Music ──
-        { kind: "label", text: "Notification & Music" },
+        { kind: "label", text: "Notification & Music", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_send_notification" },
         { kind: "block", type: "esp32_clear_notification" },
         { kind: "block", type: "esp32_play_music" },
         { kind: "block", type: "esp32_stop_music" },
 
         // ── Camera Module ──
-        { kind: "label", text: "Camera Module" },
+        { kind: "label", text: "Camera Module", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_camera_flash" },
         { kind: "block", type: "esp32_rotate_camera" },
         { kind: "block", type: "esp32_capture_image" },
 
         // ── IoT / Data Logger ──
-        { kind: "label", text: "IoT Module" },
+        { kind: "label", text: "IoT Module", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_create_file" },
         { kind: "block", type: "esp32_log_data" },
         { kind: "block", type: "esp32_stop_logger" },
 
         // ── Dabble / Gamepad ──
-        { kind: "label", text: "Dabble" },
+        { kind: "label", text: "Dabble", "web-class": "esp32-subcategory-label" },
         { kind: "block", type: "esp32_dabble_set_bt" },
         { kind: "block", type: "esp32_dabble_refresh" },
         { kind: "block", type: "esp32_gamepad_pressed" },

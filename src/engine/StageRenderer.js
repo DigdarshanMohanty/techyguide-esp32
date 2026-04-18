@@ -52,6 +52,13 @@ export class StageRenderer {
     this.app.canvas.style.width = '100%';
     this.app.canvas.style.height = '100%';
 
+    // Background sprite (for image/SVG/gradient backdrops)
+    this._bgSprite = new PixiSprite();
+    this._bgSprite.width = this.width;
+    this._bgSprite.height = this.height;
+    this._bgSprite.zIndex = -1;
+    this.app.stage.addChild(this._bgSprite);
+
     // Create layered containers: pen → sprites → bubbles
     this._penContainer = new Container();
     this._spriteContainer = new Container();
@@ -84,8 +91,72 @@ export class StageRenderer {
       }
     });
 
+    // Listen for backdrop changes from SpriteStore
+    spriteStore.on((event, data) => {
+      if (event === 'backdrop') this._applyBackdrop(data);
+    });
+
     // Start sync loop via ticker
     this.app.ticker.add(() => this._syncFrame());
+  }
+
+  /**
+   * Apply a backdrop definition to the stage.
+   * @param {{ name, type, value }} bd
+   */
+  _applyBackdrop(bd) {
+    if (!bd) return;
+
+    if (bd.type === 'color') {
+      // Solid color — set PixiJS background, hide bgSprite
+      this.app.renderer.background.color = bd.value;
+      this._bgSprite.visible = false;
+    } else if (bd.type === 'gradient') {
+      // Render gradient to an off-screen canvas, then use as texture
+      this._bgSprite.visible = true;
+      const canvas = document.createElement('canvas');
+      canvas.width = this.width;
+      canvas.height = this.height;
+      const ctx = canvas.getContext('2d');
+      // Parse CSS gradient — we use a simple top-to-bottom approach
+      const tempDiv = document.createElement('div');
+      tempDiv.style.width = `${this.width}px`;
+      tempDiv.style.height = `${this.height}px`;
+      tempDiv.style.background = bd.value;
+      document.body.appendChild(tempDiv);
+      const computedStyle = getComputedStyle(tempDiv);
+      // Fallback: draw the gradient manually via canvas if possible
+      document.body.removeChild(tempDiv);
+      // Use a foreignObject SVG trick to paint the gradient
+      const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${this.width}" height="${this.height}">
+        <foreignObject width="100%" height="100%">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="width:${this.width}px;height:${this.height}px;background:${bd.value}"></div>
+        </foreignObject>
+      </svg>`;
+      const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        const tex = Texture.from(canvas);
+        this._bgSprite.texture = tex;
+        this._bgSprite.width = this.width;
+        this._bgSprite.height = this.height;
+      };
+      img.src = url;
+    } else if (bd.type === 'svg' || bd.type === 'image') {
+      // SVG or image data URI
+      this._bgSprite.visible = true;
+      const img = new Image();
+      img.onload = () => {
+        const tex = Texture.from(img);
+        this._bgSprite.texture = tex;
+        this._bgSprite.width = this.width;
+        this._bgSprite.height = this.height;
+      };
+      img.src = bd.value;
+    }
   }
 
   /**

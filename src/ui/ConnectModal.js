@@ -1,0 +1,488 @@
+/**
+ * ConnectModal — "Connect to Port" with real Web Serial & Web Bluetooth APIs.
+ * Tracks connection state: Disconnected → Connecting → Connected.
+ */
+
+// ── State ────────────────────────────────────────────
+let connectOverlay = null;
+let connectBtn = null;
+let currentTab = 'serial';
+
+/** @type {'disconnected'|'connecting'|'connected'} */
+let connectionState = 'disconnected';
+
+/** @type {SerialPort|null} */
+let activeSerialPort = null;
+
+/** @type {BluetoothDevice|null} */
+let activeBtDevice = null;
+
+/** @type {SerialPort[]} */
+let authorizedPorts = [];
+
+/** @type {BluetoothDevice[]} */
+let discoveredBtDevices = [];
+
+// ── Public API ───────────────────────────────────────
+
+export function initConnectButton() {
+  const header = document.getElementById('appHeader');
+  if (!header) return;
+
+  connectBtn = document.createElement('button');
+  connectBtn.className = 'header-btn';
+  connectBtn.id = 'connectBtn';
+  _updateConnectBtnUI();
+
+  connectBtn.addEventListener('click', () => openConnectModal());
+  header.appendChild(connectBtn);
+
+  _createConnectModal();
+
+  // Pre-fetch authorized serial ports on load
+  _refreshSerialPorts();
+}
+
+export function getConnectionState() {
+  return connectionState;
+}
+
+export function getActivePort() {
+  return activeSerialPort;
+}
+
+export function openConnectModal() {
+  if (!connectOverlay) return;
+  currentTab = 'serial';
+  connectOverlay.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  connectOverlay.querySelector('[data-tab="serial"]')?.classList.add('active');
+  _renderBody();
+  connectOverlay.offsetHeight; // reflow
+  connectOverlay.classList.add('open');
+}
+
+export function closeConnectModal() {
+  if (connectOverlay) connectOverlay.classList.remove('open');
+}
+
+// ── Connect Button UI ────────────────────────────────
+
+function _updateConnectBtnUI() {
+  if (!connectBtn) return;
+
+  connectBtn.classList.remove('header-btn--connected');
+
+  if (connectionState === 'connected') {
+    connectBtn.classList.add('header-btn--connected');
+    const label = activeSerialPort
+      ? 'USB Connected'
+      : activeBtDevice
+        ? `BT: ${activeBtDevice.name || 'Device'}`
+        : 'Connected';
+    connectBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      ${label}
+    `;
+  } else if (connectionState === 'connecting') {
+    connectBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin-icon">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+      Connecting…
+    `;
+  } else {
+    connectBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V3"/>
+        <path d="M9 21h6"/>
+        <path d="M12 12v9"/>
+      </svg>
+      Connect
+    `;
+  }
+}
+
+// ── Modal Creation ───────────────────────────────────
+
+function _createConnectModal() {
+  connectOverlay = document.createElement('div');
+  connectOverlay.className = 'modal-overlay';
+  connectOverlay.id = 'connectModalOverlay';
+
+  connectOverlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Connect to Port</h3>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="connection-status status--disconnected" id="connStatusBadge">
+            <span class="status-dot"></span>
+            <span id="connStatusText">Disconnected</span>
+          </div>
+          <button class="modal-close" id="connectModalClose">×</button>
+        </div>
+      </div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="serial">Serial Ports (USB)</button>
+        <button class="modal-tab" data-tab="bluetooth">Bluetooth Ports</button>
+      </div>
+      <div class="modal-body" id="connectModalBody"></div>
+      <div class="modal-footer">
+        <span class="modal-footer-text">Select your device in the list above</span>
+        <div class="pagination-dots">
+          <div class="pagination-dot active"></div>
+          <div class="pagination-dot"></div>
+          <div class="pagination-dot"></div>
+        </div>
+        <button class="refresh-btn" id="connectScanBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          Scan / Refresh
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(connectOverlay);
+
+  // Close
+  connectOverlay.querySelector('#connectModalClose').addEventListener('click', closeConnectModal);
+  connectOverlay.addEventListener('click', e => {
+    if (e.target === connectOverlay) closeConnectModal();
+  });
+
+  // Tab switching
+  connectOverlay.querySelectorAll('.modal-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      currentTab = tab.dataset.tab;
+      connectOverlay.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      _renderBody();
+    });
+  });
+
+  // Scan / Refresh
+  connectOverlay.querySelector('#connectScanBtn').addEventListener('click', async () => {
+    if (currentTab === 'serial') {
+      await _requestNewSerialPort();
+    } else {
+      await _scanBluetooth();
+    }
+  });
+
+  _updateStatusBadge();
+}
+
+// ── Status Badge ─────────────────────────────────────
+
+function _updateStatusBadge() {
+  const badge = document.getElementById('connStatusBadge');
+  const text = document.getElementById('connStatusText');
+  if (!badge || !text) return;
+
+  badge.classList.remove('status--disconnected', 'status--connecting', 'status--connected');
+
+  if (connectionState === 'connected') {
+    badge.classList.add('status--connected');
+    text.textContent = 'Connected';
+  } else if (connectionState === 'connecting') {
+    badge.classList.add('status--connecting');
+    text.textContent = 'Connecting…';
+  } else {
+    badge.classList.add('status--disconnected');
+    text.textContent = 'Disconnected';
+  }
+}
+
+function _setState(newState) {
+  connectionState = newState;
+  _updateConnectBtnUI();
+  _updateStatusBadge();
+}
+
+// ── Render Body ──────────────────────────────────────
+
+function _renderBody() {
+  const body = document.getElementById('connectModalBody');
+  if (!body) return;
+
+  if (currentTab === 'serial') {
+    _renderSerialPorts(body);
+  } else {
+    _renderBluetoothDevices(body);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  WEB SERIAL API
+// ══════════════════════════════════════════════════════
+
+async function _refreshSerialPorts() {
+  if (!('serial' in navigator)) return;
+  try {
+    authorizedPorts = await navigator.serial.getPorts();
+  } catch (err) {
+    console.warn('[Serial] getPorts error:', err);
+    authorizedPorts = [];
+  }
+}
+
+async function _requestNewSerialPort() {
+  if (!('serial' in navigator)) {
+    alert('Web Serial API is not supported in this browser. Use Chrome or Edge.');
+    return;
+  }
+
+  try {
+    const port = await navigator.serial.requestPort();
+    // Add to list if not already
+    if (!authorizedPorts.includes(port)) {
+      authorizedPorts.push(port);
+    }
+    _renderBody();
+  } catch (err) {
+    // User cancelled the prompt
+    if (err.name !== 'NotFoundError') {
+      console.warn('[Serial] requestPort error:', err);
+    }
+  }
+}
+
+async function _connectSerialPort(port) {
+  if (connectionState === 'connected' && activeSerialPort === port) return;
+
+  // Disconnect any existing port first
+  await _disconnectSerial();
+
+  _setState('connecting');
+  _renderBody();
+
+  try {
+    await port.open({ baudRate: 115200 });
+    activeSerialPort = port;
+    _setState('connected');
+
+    // Listen for disconnect
+    port.addEventListener('disconnect', () => {
+      activeSerialPort = null;
+      _setState('disconnected');
+      _refreshSerialPorts().then(() => _renderBody());
+    }, { once: true });
+
+  } catch (err) {
+    console.error('[Serial] Connection failed:', err);
+    activeSerialPort = null;
+    _setState('disconnected');
+    alert(`Connection failed: ${err.message}`);
+  }
+
+  _renderBody();
+}
+
+async function _disconnectSerial() {
+  if (activeSerialPort) {
+    try {
+      await activeSerialPort.close();
+    } catch (e) { /* port may already be closed */ }
+    activeSerialPort = null;
+  }
+  _setState('disconnected');
+}
+
+function _getPortLabel(port) {
+  const info = port.getInfo();
+  if (info.usbVendorId) {
+    return `USB Device (VID: 0x${info.usbVendorId.toString(16).toUpperCase()}, PID: 0x${info.usbProductId.toString(16).toUpperCase()})`;
+  }
+  return 'Serial Port';
+}
+
+function _renderSerialPorts(body) {
+  if (!('serial' in navigator)) {
+    body.innerHTML = `
+      <div class="port-empty-state">
+        <div style="text-align:center">
+          <div style="font-size:24px;margin-bottom:8px;">⚠️</div>
+          <div>Web Serial API is not supported in this browser.</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Use Google Chrome or Microsoft Edge.</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (authorizedPorts.length === 0) {
+    body.innerHTML = `
+      <div class="port-empty-state">
+        <div style="text-align:center">
+          <div style="font-size:24px;margin-bottom:8px;">🔌</div>
+          <div>No authorized serial ports.</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Click <strong>Scan / Refresh</strong> to select a USB device.</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="port-list">
+      ${authorizedPorts.map((port, i) => {
+        const isActive = activeSerialPort === port && connectionState === 'connected';
+        const isConnecting = activeSerialPort === port && connectionState === 'connecting';
+        const label = _getPortLabel(port);
+        const btnClass = isActive ? 'port-connect-btn port-connect-btn--connected' : 'port-connect-btn';
+        const btnText = isActive ? '✓ Connected' : isConnecting ? 'Connecting…' : 'Connect';
+
+        return `
+          <div class="port-item" data-port-index="${i}">
+            <span>${label}</span>
+            <button class="${btnClass}" data-action="connect-serial" data-port-idx="${i}" ${isActive ? 'disabled' : ''}>
+              ${btnText}
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // Wire connect buttons
+  body.querySelectorAll('[data-action="connect-serial"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.dataset.portIdx);
+      const port = authorizedPorts[idx];
+      if (port) await _connectSerialPort(port);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  WEB BLUETOOTH API
+// ══════════════════════════════════════════════════════
+
+async function _scanBluetooth() {
+  if (!('bluetooth' in navigator)) {
+    alert('Web Bluetooth API is not supported in this browser. Use Chrome on macOS/Android/ChromeOS.');
+    return;
+  }
+
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['battery_service'],
+    });
+
+    // Add if not duplicate
+    if (!discoveredBtDevices.find(d => d.id === device.id)) {
+      discoveredBtDevices.push(device);
+    }
+
+    _renderBody();
+  } catch (err) {
+    if (err.name !== 'NotFoundError') {
+      console.warn('[Bluetooth] requestDevice error:', err);
+    }
+  }
+}
+
+async function _connectBtDevice(device) {
+  if (connectionState === 'connected' && activeBtDevice === device) return;
+
+  await _disconnectBt();
+
+  _setState('connecting');
+  _renderBody();
+
+  try {
+    const server = await device.gatt.connect();
+    activeBtDevice = device;
+    _setState('connected');
+
+    // Listen for disconnect
+    device.addEventListener('gattserverdisconnected', () => {
+      activeBtDevice = null;
+      _setState('disconnected');
+      _renderBody();
+    }, { once: true });
+
+    console.log('[Bluetooth] Connected to GATT server:', server);
+  } catch (err) {
+    console.error('[Bluetooth] Connection failed:', err);
+    activeBtDevice = null;
+    _setState('disconnected');
+    alert(`Bluetooth connection failed: ${err.message}`);
+  }
+
+  _renderBody();
+}
+
+async function _disconnectBt() {
+  if (activeBtDevice && activeBtDevice.gatt.connected) {
+    try {
+      activeBtDevice.gatt.disconnect();
+    } catch (e) { /* may already be disconnected */ }
+  }
+  activeBtDevice = null;
+  _setState('disconnected');
+}
+
+function _renderBluetoothDevices(body) {
+  if (!('bluetooth' in navigator)) {
+    body.innerHTML = `
+      <div class="port-empty-state">
+        <div style="text-align:center">
+          <div style="font-size:24px;margin-bottom:8px;">⚠️</div>
+          <div>Web Bluetooth API is not supported.</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Use Chrome on macOS, Android, or ChromeOS.</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (discoveredBtDevices.length === 0) {
+    body.innerHTML = `
+      <div class="port-empty-state">
+        <div style="text-align:center">
+          <div style="font-size:24px;margin-bottom:8px;">📡</div>
+          <div>No Bluetooth 4.0 devices found</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Click <strong>Scan / Refresh</strong> to discover nearby devices.</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="port-list">
+      ${discoveredBtDevices.map((device, i) => {
+        const isActive = activeBtDevice === device && connectionState === 'connected';
+        const isConnecting = activeBtDevice === device && connectionState === 'connecting';
+        const name = device.name || `Device (${device.id.slice(0, 8)}…)`;
+        const btnClass = isActive ? 'port-connect-btn port-connect-btn--connected' : 'port-connect-btn';
+        const btnText = isActive ? '✓ Connected' : isConnecting ? 'Connecting…' : 'Connect';
+
+        return `
+          <div class="port-item" data-bt-index="${i}">
+            <span>📡 ${name}</span>
+            <button class="${btnClass}" data-action="connect-bt" data-bt-idx="${i}" ${isActive ? 'disabled' : ''}>
+              ${btnText}
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // Wire connect buttons
+  body.querySelectorAll('[data-action="connect-bt"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.dataset.btIdx);
+      const device = discoveredBtDevices[idx];
+      if (device) await _connectBtDevice(device);
+    });
+  });
+}

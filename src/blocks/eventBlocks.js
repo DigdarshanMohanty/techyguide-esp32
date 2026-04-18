@@ -105,7 +105,23 @@ eventBlocks['when_backdrop_switches'] = {
       args0: [{
         type: 'field_dropdown',
         name: 'BACKDROP',
-        options: [['backdrop1', 'backdrop1']],
+        options: function() {
+          // Dynamic dropdown: pull from backdrop library + user backdrops
+          try {
+            const { BACKDROP_LIBRARY } = require('../ui/backdropLibrary');
+            const spriteStore = require('../engine/SpriteStore').default;
+            const options = BACKDROP_LIBRARY.map(b => [b.name, b.name]);
+            const userBackdrops = spriteStore.getBackdrops();
+            userBackdrops.forEach(b => {
+              if (!options.find(o => o[1] === b.name)) {
+                options.push([b.name, b.name]);
+              }
+            });
+            return options.length > 0 ? options : [['backdrop1', 'backdrop1']];
+          } catch (e) {
+            return [['backdrop1', 'backdrop1']];
+          }
+        },
       }],
       nextStatement: null,
       colour: '#FFBF00',

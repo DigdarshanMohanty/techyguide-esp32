@@ -73,8 +73,10 @@ export class Sprite {
     // ── Workspace state (Blockly JSON) ──
     this.workspaceState = null;
 
-    // Add default cat costume
-    this.addCostume('cat', SCRATCH_CAT_SVG);
+    // Add default costume — use custom source if provided, otherwise Scratch Cat
+    const costumeSrc = options.costumeSrc || SCRATCH_CAT_SVG;
+    const costumeName = options.costumeSrc ? name.toLowerCase() : 'cat';
+    this.addCostume(costumeName, costumeSrc);
   }
 
   // ── Costume management ─────────────────────────────

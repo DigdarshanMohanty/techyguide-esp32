@@ -1,20 +1,26 @@
 /**
- * ModeSwitcher — Dropdown to toggle between Scratch mode and Board mode (i-bot / t-bot).
- * Default is Scratch. When a board is selected, ESP32 code + upload panels appear.
+ * ModeSwitcher — Board Selector Modal + Mode Switching.
+ * Replaces the old dropdown with a professional grid-based board selector.
  */
 
-const MODES = [
-  { id: 'scratch', label: 'Scratch', icon: '🐱' },
-  { id: 'i-bot',   label: 'i-bot',   icon: '🤖' },
-  { id: 't-bot',   label: 't-bot',   icon: '🤖' },
+const BOARDS = [
+  { id: 'scratch', label: 'Scratch', icon: '🐱', description: 'Visual coding' },
+  { id: 'i-bot',   label: 'i-bot',   icon: '🤖', description: 'TechyGuide i-bot' },
+  { id: 't-bot',   label: 't-bot',   icon: '🦾', description: 'TechyGuide t-bot' },
+  { id: 'esp32',   label: 'ESP32',   icon: '⚡', description: 'Espressif ESP32' },
+  { id: 'arduino-uno',  label: 'Arduino Uno',  icon: '🔧', description: 'ATmega328P' },
+  { id: 'arduino-mega', label: 'Arduino Mega', icon: '🔩', description: 'ATmega2560' },
+  { id: 'arduino-nano', label: 'Arduino Nano', icon: '📟', description: 'ATmega328P Mini' },
 ];
 
 let currentMode = 'scratch';
 let onModeChangeCallback = null;
+let boardOverlay = null;
+let boardBtnLabel = null;
 
 /**
- * Create and mount the mode-switcher dropdown in the header.
- * @param {Function} onModeChange - callback(newMode) called when mode changes
+ * Create and mount the mode-switcher in the header.
+ * @param {Function} onModeChange - callback(newMode)
  */
 export function initModeSwitcher(onModeChange) {
   onModeChangeCallback = onModeChange;
@@ -27,39 +33,104 @@ export function initModeSwitcher(onModeChange) {
   logo.className = 'header-logo';
   logo.innerHTML = `
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <rect width="28" height="28" rx="6" fill="#4C97FF"/>
-      <text x="14" y="20" text-anchor="middle" fill="white" font-size="16" font-weight="bold">S</text>
+      <rect width="28" height="28" rx="4" fill="#00897B"/>
+      <text x="14" y="20" text-anchor="middle" fill="white" font-size="16" font-weight="bold">T</text>
     </svg>
-    <span>TechyGuide</span>
+    <span style="color:#00897B;">Techy</span><span style="color:#E8950F;">Guide</span>
   `;
 
-  // ── Dropdown ───────────────────────────
-  const dropdownWrap = document.createElement('div');
-  dropdownWrap.className = 'mode-dropdown-wrap';
+  // ── Board Selector Button ──────────────
+  const boardBtn = document.createElement('button');
+  boardBtn.className = 'header-btn';
+  boardBtn.id = 'boardSelectorBtn';
+  boardBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+      <line x1="8" y1="21" x2="16" y2="21"/>
+      <line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+    <span id="boardBtnLabel">Scratch</span>
+    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="margin-left:2px;">
+      <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `;
+  boardBtn.addEventListener('click', () => openBoardModal());
 
-  const select = document.createElement('select');
-  select.id = 'modeSwitcher';
-  select.className = 'mode-dropdown';
+  // ── Spacer ─────────────────────────────
+  const spacer = document.createElement('div');
+  spacer.className = 'header-spacer';
 
-  MODES.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.id;
-    opt.textContent = `${m.icon}  ${m.label}`;
-    if (m.id === 'scratch') opt.selected = true;
-    select.appendChild(opt);
-  });
-
-  select.addEventListener('change', (e) => {
-    const newMode = e.target.value;
-    switchMode(newMode);
-  });
-
-  dropdownWrap.appendChild(select);
-
-  // ── Controls removed from header; now on stage container ──
-
+  // Insert in order: logo, board btn, spacer (then Connect button will be added by ConnectModal)
   header.appendChild(logo);
-  header.appendChild(dropdownWrap);
+  header.appendChild(boardBtn);
+  header.appendChild(spacer);
+
+  boardBtnLabel = document.getElementById('boardBtnLabel');
+
+  _createBoardModal();
+}
+
+function _createBoardModal() {
+  boardOverlay = document.createElement('div');
+  boardOverlay.className = 'modal-overlay';
+  boardOverlay.id = 'boardModalOverlay';
+
+  boardOverlay.innerHTML = `
+    <div class="modal-content" style="width:480px;">
+      <div class="modal-header">
+        <h3>Select Board</h3>
+        <button class="modal-close" id="boardModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="board-grid" id="boardGrid">
+          ${BOARDS.map(b => `
+            <div class="board-item ${b.id === currentMode ? 'active' : ''}" data-board="${b.id}">
+              <div class="board-icon">${b.icon}</div>
+              <span class="board-name">${b.label}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(boardOverlay);
+
+  // Close handlers
+  boardOverlay.querySelector('#boardModalClose').addEventListener('click', closeBoardModal);
+  boardOverlay.addEventListener('click', (e) => {
+    if (e.target === boardOverlay) closeBoardModal();
+  });
+
+  // Board selection
+  boardOverlay.querySelectorAll('.board-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const boardId = item.dataset.board;
+      _selectBoard(boardId);
+    });
+  });
+}
+
+function _selectBoard(boardId) {
+  const board = BOARDS.find(b => b.id === boardId);
+  if (!board) return;
+
+  // Update visual selection
+  boardOverlay.querySelectorAll('.board-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.board === boardId);
+  });
+
+  // Update header button label
+  if (boardBtnLabel) {
+    boardBtnLabel.textContent = board.label;
+  }
+
+  // Map to internal mode
+  const newMode = boardId === 'scratch' ? 'scratch' : boardId;
+  switchMode(newMode);
+
+  // Close modal after a brief delay for feedback
+  setTimeout(() => closeBoardModal(), 150);
 }
 
 /**
@@ -93,9 +164,24 @@ function switchMode(newMode) {
   }
 }
 
+export function openBoardModal() {
+  if (!boardOverlay) return;
+  // Update active state
+  boardOverlay.querySelectorAll('.board-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.board === currentMode);
+  });
+  boardOverlay.offsetHeight; // reflow
+  boardOverlay.classList.add('open');
+}
+
+export function closeBoardModal() {
+  if (boardOverlay) boardOverlay.classList.remove('open');
+}
+
 /**
  * Get the currently active mode.
  */
 export function getCurrentMode() {
-  return currentMode;
+  // Scratch mode is 'scratch', all board modes are treated as board modes
+  return currentMode === 'scratch' ? 'scratch' : currentMode;
 }
