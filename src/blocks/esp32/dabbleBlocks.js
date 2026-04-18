@@ -1,3 +1,4 @@
+// esp32 dabble blocks — gamepad, terminal, sensor via app
 import * as Blockly from "blockly/core";
 
 const dabbleSetBt = {

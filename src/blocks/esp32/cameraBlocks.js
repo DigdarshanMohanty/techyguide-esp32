@@ -1,3 +1,4 @@
+// esp32 camera blocks — capture, stream
 import * as Blockly from "blockly/core";
 
 const cameraFlash = {

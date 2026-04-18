@@ -1,3 +1,4 @@
+// python generator for esp32 sensor blocks
 import { Order } from "blockly/python";
 
 export const forBlock = Object.create(null);
@@ -50,6 +51,6 @@ forBlock["esp32_analog_sensor"] = function (block, generator) {
 
 forBlock["esp32_potentiometer"] = function (block, generator) {
   generator.definitions_["import_machine"] = "from machine import Pin, PWM, ADC";
-  // Potentiometer is typically on ADC pin 34
+  
   return [`ADC(Pin(34)).read()`, Order.FUNCTION_CALL];
 };

@@ -1,12 +1,6 @@
-/**
- * uploadPanel.js
- * Renders the "Upload to ESP32" button, status badge, and output log.
- * Injects HTML into #uploadPanel (defined in index.html).
- */
-
+// esp32 upload panel — status badge, upload button, and output log
 import { uploadToESP32 } from "../upload/serialUpload";
 
-// Status label map
 const STATUS_LABELS = {
   idle: { text: "Ready", cls: "status-idle" },
   waiting_port: { text: "Select Port…", cls: "status-waiting" },
@@ -15,17 +9,13 @@ const STATUS_LABELS = {
   entering_repl: { text: "Entering REPL…", cls: "status-waiting" },
   uploading: { text: "Uploading…", cls: "status-uploading" },
   reading_output: { text: "Reading output…", cls: "status-uploading" },
-  success: { text: "✓ Done!", cls: "status-success" },
-  error: { text: "✗ Error", cls: "status-error" },
+  success: { text: "Done!", cls: "status-success" },
+  error: { text: "Error", cls: "status-error" },
 };
 
-let _getCode = null; // injected by init()
+let _getCode = null; 
 let _isUploading = false;
 
-/**
- * Mount the upload panel into #uploadPanel.
- * @param {function} getCode - function that returns current workspace code string
- */
 export function initUploadPanel(getCode) {
   _getCode = getCode;
 
@@ -59,7 +49,7 @@ export function initUploadPanel(getCode) {
       </div>
 
       <div class="upload-hint">
-        ⚠ Requires Chrome or Edge &nbsp;·&nbsp; Connect ESP32 via USB
+        Requires Chrome or Edge &nbsp;·&nbsp; Connect ESP32 via USB
       </div>
     </div>
   `;
@@ -72,7 +62,7 @@ async function handleUpload() {
 
   const code = _getCode();
   if (!code || code.trim() === "") {
-    setLog("⚠ No code in workspace. Add some blocks first.", "log-warn");
+    setLog("No code in workspace. Add some blocks first.", "log-warn");
     return;
   }
 
@@ -95,7 +85,7 @@ async function handleUpload() {
   } catch (err) {
     setStatus("error");
     if (err.name === "NotFoundError") {
-      // User cancelled port picker
+      
       setLog("No port selected. Upload cancelled.", "log-warn");
       setStatus("idle");
     } else {
@@ -106,8 +96,6 @@ async function handleUpload() {
     setButtonState(false);
   }
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function setStatus(key) {
   const el = document.getElementById("uploadStatus");

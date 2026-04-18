@@ -1,7 +1,4 @@
-/**
- * SpritePanel — Manages the UI for the Sprite properties bar, the Sprite list,
- * and the Stage backdrop list, precisely matching the PictoBlox/Scratch 3 style.
- */
+// sprite properties bar, sprite list, and backdrop list ui
 import spriteStore from '../engine/SpriteStore';
 import { openSpriteChooser } from './SpriteChooserModal';
 import { openBackdropChooser } from './BackdropChooserModal';
@@ -10,7 +7,6 @@ export function initSpritePanel() {
   const container = document.getElementById('spritePanelContainer');
   if (!container) return;
 
-  // Build the complete UI structure
   container.innerHTML = `
     <!-- Top info bar (Sprite properties) -->
     <div class="sprite-info-bar">
@@ -123,12 +119,10 @@ function bindEvents() {
   propShow.addEventListener('click', () => updateProp(s => s.visible = true));
   propHide.addEventListener('click', () => updateProp(s => s.visible = false));
 
-  // ── Open Sprite Chooser Modal ──
   addSpriteBtn.addEventListener('click', () => {
     openSpriteChooser();
   });
 
-  // ── Open Backdrop Chooser Modal ──
   addBackdropBtn.addEventListener('click', () => {
     openBackdropChooser();
   });
@@ -177,9 +171,8 @@ function renderPanel() {
   sprites.forEach(sprite => {
     const thumb = document.createElement('div');
     thumb.className = `sprite-thumb ${sprite.id === s?.id ? 'selected' : ''}`;
-    
-    // Delete btn (only if > 1 sprite)
-    const delBtn = sprites.length > 1 ? `<div class="delete-btn" data-id="${sprite.id}">×</div>` : '';
+
+    const delBtn = sprites.length > 1 ? `<div class="delete-btn" data-id="${sprite.id}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></div>` : '';
 
     const img = sprite.getCostumeImage();
     if (img && img.src) {
@@ -192,7 +185,7 @@ function renderPanel() {
       `;
     } else {
       thumb.innerHTML = `
-        <div style="font-size: 24px; line-height: 1; flex: 1; display:flex; align-items:center;">🐱</div>
+        <div style="font-size: 24px; line-height: 1; flex: 1; display:flex; align-items:center;"></div>
         <div class="sprite-thumb-info">
             <span class="sprite-thumb-name">${sprite.name}</span>
         </div>
@@ -212,6 +205,5 @@ function renderPanel() {
     list.appendChild(thumb);
   });
 
-  // Update backdrop preview too
   updateBackdropPreview();
 }

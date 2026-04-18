@@ -1,12 +1,8 @@
-/**
- * Scratch-style toolbox definition.
- * Categories in Scratch 3.0 order with matching colors.
- */
-
+// scratch-mode toolbox definition for blockly
 export const scratchToolbox = {
   kind: 'categoryToolbox',
   contents: [
-    // ── Motion ─────────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Motion',
@@ -46,7 +42,7 @@ export const scratchToolbox = {
         { kind: 'block', type: 'direction_reporter' },
       ],
     },
-    // ── Looks ──────────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Looks',
@@ -93,7 +89,7 @@ export const scratchToolbox = {
         { kind: 'block', type: 'take_stage_snapshot' },
       ],
     },
-    // ── Sound ──────────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Sound',
@@ -123,7 +119,7 @@ export const scratchToolbox = {
         { kind: 'block', type: 'volume_reporter' },
       ],
     },
-    // ── Events ─────────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Events',
@@ -147,7 +143,7 @@ export const scratchToolbox = {
         }},
       ],
     },
-    // ── Control ────────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Control',
@@ -176,7 +172,7 @@ export const scratchToolbox = {
         { kind: 'block', type: 'delete_clone' },
       ],
     },
-    // ── Sensing ────────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Sensing',
@@ -211,7 +207,7 @@ export const scratchToolbox = {
         { kind: 'block', type: 'username_reporter' },
       ],
     },
-    // ── Operators ──────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Operators',
@@ -258,14 +254,14 @@ export const scratchToolbox = {
         { kind: 'block', type: 'math_number', fields: { NUM: 0 } },
       ],
     },
-    // ── Variables ──────────────────────────────────
+    
     {
       kind: 'category',
       name: 'Variables',
       colour: '#FF8C1A',
       custom: 'VARIABLE',
     },
-    // ── My Blocks (Functions) ─────────────────────
+    
     {
       kind: 'category',
       name: 'My Blocks',

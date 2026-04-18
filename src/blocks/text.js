@@ -1,15 +1,6 @@
-/**
- * @license
- * Copyright 2023 Google LLC
- * SPDX-License-Identifier: Apache-2.0
- */
-
+// block definition for add_text
 import * as Blockly from "blockly/core";
 
-// Create a custom block called 'add_text' that adds
-// text to the output div on the sample app.
-// This is just an example and you should replace this with your
-// own custom blocks.
 const addText = {
   type: "add_text",
   message0: "Add text %1",
@@ -27,9 +18,6 @@ const addText = {
   helpUrl: "",
 };
 
-// Create the block definitions for the JSON-only blocks.
-// This does not register their definitions with Blockly.
-// This file has no side effects!
 export const blocks1 = Blockly.common.createBlockDefinitionsFromJsonArray([
   addText,
 ]);

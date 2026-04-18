@@ -1,3 +1,4 @@
+// esp32 input blocks — button, potentiometer, joystick
 import * as Blockly from "blockly/core";
 
 const tactileSwitch = {

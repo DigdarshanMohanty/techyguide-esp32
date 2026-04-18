@@ -1,3 +1,4 @@
+// block definition for wait_block
 import * as Blockly from "blockly";
 
 const doWait = {

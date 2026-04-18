@@ -1,9 +1,10 @@
+// python generator for esp32 core blocks
 import { Order } from "blockly/python";
 
 export const forBlock = Object.create(null);
 
 forBlock["esp32_when_starts"] = function (block, generator) {
-  // Hat block — no code output, acts as script anchor
+  
   return "";
 };
 

@@ -1,8 +1,4 @@
-/**
- * StageRenderer — Renders sprites on a 480×360 stage using PixiJS v8.
- * Uses Scratch coordinate system: center-origin, x: -240..240, y: -180..180.
- */
-
+// pixi.js renderer — syncs sprite data model to a 480x360 visual stage
 import { Application, Sprite as PixiSprite, Graphics, Text, TextStyle, Container, Texture, Assets } from 'pixi.js';
 import spriteStore from './SpriteStore.js';
 
@@ -14,28 +10,22 @@ export class StageRenderer {
     this.sprites = [];
     this.backdrop = '#ffffff';
 
-    // Mouse tracking (Scratch coordinates)
     this.mouseX = 0;
     this.mouseY = 0;
     this.mouseDown = false;
 
-    // Click callbacks
     this._onSpriteClick = null;
     this._onStageClick = null;
 
-    // PixiJS state
     this.app = null;
-    this._pixiSprites = new Map();       // spriteId → PIXI.Sprite
-    this._penContainer = null;           // Graphics layer for pen trails
-    this._spriteContainer = null;        // Container for all sprite display objects
-    this._bubbleContainer = null;        // Container for speech bubbles
-    this._bubbleObjects = new Map();     // spriteId → { container, bg, text, tail }
+    this._pixiSprites = new Map();       
+    this._penContainer = null;           
+    this._spriteContainer = null;        
+    this._bubbleContainer = null;        
+    this._bubbleObjects = new Map();     
     this._penGraphics = null;
   }
 
-  /**
-   * Initialize the PixiJS application (async in v8).
-   */
   async init() {
     this.app = new Application();
     await this.app.init({
@@ -47,19 +37,16 @@ export class StageRenderer {
       autoDensity: true,
     });
 
-    // Mount canvas into container
     this.containerEl.appendChild(this.app.canvas);
     this.app.canvas.style.width = '100%';
     this.app.canvas.style.height = '100%';
 
-    // Background sprite (for image/SVG/gradient backdrops)
     this._bgSprite = new PixiSprite();
     this._bgSprite.width = this.width;
     this._bgSprite.height = this.height;
     this._bgSprite.zIndex = -1;
     this.app.stage.addChild(this._bgSprite);
 
-    // Create layered containers: pen → sprites → bubbles
     this._penContainer = new Container();
     this._spriteContainer = new Container();
     this._bubbleContainer = new Container();
@@ -67,11 +54,9 @@ export class StageRenderer {
     this.app.stage.addChild(this._spriteContainer);
     this.app.stage.addChild(this._bubbleContainer);
 
-    // Pen trails graphics object
     this._penGraphics = new Graphics();
     this._penContainer.addChild(this._penGraphics);
 
-    // Mouse tracking via PixiJS events
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = this.app.screen;
 
@@ -84,50 +69,43 @@ export class StageRenderer {
     this.app.stage.on('pointerdown', () => { this.mouseDown = true; });
     this.app.stage.on('pointerup', () => { this.mouseDown = false; });
 
-    // Stage click (background only)
     this.app.stage.on('pointerdown', (e) => {
       if (e.target === this.app.stage && this._onStageClick) {
         this._onStageClick();
       }
     });
 
-    // Listen for backdrop changes from SpriteStore
     spriteStore.on((event, data) => {
       if (event === 'backdrop') this._applyBackdrop(data);
     });
 
-    // Start sync loop via ticker
     this.app.ticker.add(() => this._syncFrame());
   }
 
-  /**
-   * Apply a backdrop definition to the stage.
-   * @param {{ name, type, value }} bd
-   */
   _applyBackdrop(bd) {
     if (!bd) return;
 
     if (bd.type === 'color') {
-      // Solid color — set PixiJS background, hide bgSprite
+      
       this.app.renderer.background.color = bd.value;
       this._bgSprite.visible = false;
     } else if (bd.type === 'gradient') {
-      // Render gradient to an off-screen canvas, then use as texture
+      
       this._bgSprite.visible = true;
       const canvas = document.createElement('canvas');
       canvas.width = this.width;
       canvas.height = this.height;
       const ctx = canvas.getContext('2d');
-      // Parse CSS gradient — we use a simple top-to-bottom approach
+      
       const tempDiv = document.createElement('div');
       tempDiv.style.width = `${this.width}px`;
       tempDiv.style.height = `${this.height}px`;
       tempDiv.style.background = bd.value;
       document.body.appendChild(tempDiv);
       const computedStyle = getComputedStyle(tempDiv);
-      // Fallback: draw the gradient manually via canvas if possible
+      
       document.body.removeChild(tempDiv);
-      // Use a foreignObject SVG trick to paint the gradient
+      
       const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${this.width}" height="${this.height}">
         <foreignObject width="100%" height="100%">
           <div xmlns="http://www.w3.org/1999/xhtml" style="width:${this.width}px;height:${this.height}px;background:${bd.value}"></div>
@@ -146,7 +124,7 @@ export class StageRenderer {
       };
       img.src = url;
     } else if (bd.type === 'svg' || bd.type === 'image') {
-      // SVG or image data URI
+      
       this._bgSprite.visible = true;
       const img = new Image();
       img.onload = () => {
@@ -159,39 +137,24 @@ export class StageRenderer {
     }
   }
 
-  /**
-   * Set the sprite list to render (from SpriteStore).
-   */
   setSprites(sprites) {
     this.sprites = sprites;
   }
 
-  /**
-   * Start the render loop (noop — PixiJS ticker handles this).
-   */
   start() {
-    // PixiJS auto-renders via its internal ticker
+    
   }
 
-  /**
-   * Stop the render loop.
-   */
   stop() {
     if (this.app) this.app.ticker.stop();
   }
 
-  /**
-   * Each frame: sync sprite data model → PIXI display objects.
-   */
   _syncFrame() {
     this._syncPenTrails();
     this._syncSpriteDisplayObjects();
     this._syncBubbles();
   }
 
-  /**
-   * Sync pen trails to the pen graphics layer.
-   */
   _syncPenTrails() {
     const g = this._penGraphics;
     g.clear();
@@ -207,9 +170,6 @@ export class StageRenderer {
     }
   }
 
-  /**
-   * Create / update / remove PIXI.Sprite display objects to match the data model.
-   */
   _syncSpriteDisplayObjects() {
     const activeIds = new Set();
 
@@ -220,7 +180,7 @@ export class StageRenderer {
       let pixiSprite = this._pixiSprites.get(sprite.id);
 
       if (!pixiSprite) {
-        // Create new PIXI.Sprite
+        
         pixiSprite = new PixiSprite();
         pixiSprite.anchor.set(0.5);
         pixiSprite.eventMode = 'static';
@@ -228,7 +188,6 @@ export class StageRenderer {
         pixiSprite._spriteRef = sprite;
         pixiSprite._dragging = false;
 
-        // ── Drag & Drop ──
         pixiSprite.on('pointerdown', (e) => {
           e.stopPropagation();
           pixiSprite._dragging = true;
@@ -246,10 +205,10 @@ export class StageRenderer {
           const newY = e.global.y - pixiSprite._dragOffset.y;
           pixiSprite.x = newX;
           pixiSprite.y = newY;
-          // Sync back to Scratch data model
+          
           sprite.x = Math.round(newX - 240);
           sprite.y = Math.round(180 - newY);
-          // Update sprite panel live
+          
           spriteStore._emit('update', sprite);
         });
 
@@ -257,7 +216,7 @@ export class StageRenderer {
           if (!pixiSprite._dragging) return;
           pixiSprite._dragging = false;
           pixiSprite.alpha = sprite.opacity;
-          // Final update so panel shows correct X/Y
+          
           spriteStore._emit('update', sprite);
         };
         pixiSprite.on('pointerup', endDrag);
@@ -267,7 +226,6 @@ export class StageRenderer {
         this._pixiSprites.set(sprite.id, pixiSprite);
       }
 
-      // Update texture from costume
       const costumeImg = sprite.getCostumeImage();
       if (costumeImg && costumeImg.complete && costumeImg.naturalWidth > 0) {
         const tex = Texture.from(costumeImg);
@@ -276,29 +234,23 @@ export class StageRenderer {
         }
       }
 
-      // Sync position (Scratch → Pixi coordinates) — skip if user is dragging
       if (!pixiSprite._dragging) {
         const pos = this._toPixi(sprite.x, sprite.y);
         pixiSprite.x = pos.x;
         pixiSprite.y = pos.y;
       }
 
-      // Sync rotation (Scratch direction: 0=up, 90=right → Pixi radians)
       pixiSprite.rotation = ((sprite.direction - 90) * Math.PI) / 180;
 
-      // Sync scale
       const scale = sprite.size / 100;
       pixiSprite.scale.set(scale);
 
-      // Sync visibility & alpha
       pixiSprite.visible = sprite.visible;
       pixiSprite.alpha = sprite.opacity;
 
-      // Z-order
       pixiSprite.zIndex = i;
     }
 
-    // Remove display objects for sprites that no longer exist
     for (const [id, pixiSprite] of this._pixiSprites) {
       if (!activeIds.has(id)) {
         this._spriteContainer.removeChild(pixiSprite);
@@ -310,22 +262,18 @@ export class StageRenderer {
     this._spriteContainer.sortChildren();
   }
 
-  /**
-   * Sync speech/think bubbles.
-   */
   _syncBubbles() {
     const activeIds = new Set();
 
     for (const sprite of this.sprites) {
       if (!sprite.visible || !sprite.sayBubble) {
-        // Remove bubble if it exists
+        
         if (this._bubbleObjects.has(sprite.id)) {
           this._removeBubble(sprite.id);
         }
         continue;
       }
 
-      // Check expiry
       if (sprite.sayBubble.expiresAt && Date.now() > sprite.sayBubble.expiresAt) {
         sprite.clearBubble();
         this._removeBubble(sprite.id);
@@ -339,7 +287,7 @@ export class StageRenderer {
       let obj = this._bubbleObjects.get(sprite.id);
 
       if (!obj || obj._lastText !== bubble.text || obj._lastType !== bubble.type) {
-        // Recreate bubble
+        
         this._removeBubble(sprite.id);
 
         const style = new TextStyle({
@@ -357,7 +305,6 @@ export class StageRenderer {
         bg.fill('#ffffff');
         bg.stroke({ width: 1.5, color: '#c4c4c4' });
 
-        // Tail
         const tail = new Graphics();
         if (bubble.type === 'think') {
           tail.circle(8, bubbleH + 6, 4);
@@ -386,12 +333,10 @@ export class StageRenderer {
         this._bubbleObjects.set(sprite.id, obj);
       }
 
-      // Position bubble above sprite
       obj.container.x = pos.x + 20;
       obj.container.y = pos.y - 50;
     }
 
-    // Clean up bubbles for deleted sprites
     for (const [id] of this._bubbleObjects) {
       if (!this.sprites.find(s => s.id === id)) {
         this._removeBubble(id);
@@ -408,9 +353,6 @@ export class StageRenderer {
     }
   }
 
-  /**
-   * Convert Scratch coordinates to PixiJS pixel coordinates.
-   */
   _toPixi(sx, sy) {
     return {
       x: 240 + sx,
@@ -418,9 +360,6 @@ export class StageRenderer {
     };
   }
 
-  /**
-   * Convert PixiJS pixel coordinates to Scratch coordinates.
-   */
   _fromPixi(px, py) {
     return {
       x: px - 240,
@@ -436,9 +375,6 @@ export class StageRenderer {
     this._onStageClick = callback;
   }
 
-  /**
-   * Get the PixiJS app instance (for thumbnail extraction, etc.).
-   */
   getApp() {
     return this.app;
   }

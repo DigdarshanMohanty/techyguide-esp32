@@ -1,3 +1,4 @@
+// python generator for print_block
 import { Order } from "blockly/python";
 
 export const forBlock = Object.create(null);

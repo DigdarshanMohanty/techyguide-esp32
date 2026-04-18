@@ -1,3 +1,4 @@
+// esp32 sensor blocks — ultrasonic, ir, temperature, light
 import * as Blockly from "blockly/core";
 
 const PIN_OPTIONS = [

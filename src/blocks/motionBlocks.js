@@ -1,11 +1,8 @@
-/**
- * Scratch-style Motion blocks for Blockly.
- */
+// scratch motion blocks — move, turn, goto, glide, position
 import * as Blockly from 'blockly';
 
 export const motionBlocks = {};
 
-// ── move_steps ────────────────────────────────────
 motionBlocks['move_steps'] = {
   init: function() {
     this.jsonInit({
@@ -20,7 +17,6 @@ motionBlocks['move_steps'] = {
   }
 };
 
-// ── turn_right ────────────────────────────────────
 motionBlocks['turn_right'] = {
   init: function() {
     this.jsonInit({
@@ -35,7 +31,6 @@ motionBlocks['turn_right'] = {
   }
 };
 
-// ── turn_left ─────────────────────────────────────
 motionBlocks['turn_left'] = {
   init: function() {
     this.jsonInit({
@@ -50,7 +45,6 @@ motionBlocks['turn_left'] = {
   }
 };
 
-// ── go_to_xy ──────────────────────────────────────
 motionBlocks['go_to_xy'] = {
   init: function() {
     this.jsonInit({
@@ -68,7 +62,6 @@ motionBlocks['go_to_xy'] = {
   }
 };
 
-// ── glide_to_xy ───────────────────────────────────
 motionBlocks['glide_to_xy'] = {
   init: function() {
     this.jsonInit({
@@ -87,7 +80,6 @@ motionBlocks['glide_to_xy'] = {
   }
 };
 
-// ── point_in_direction ────────────────────────────
 motionBlocks['point_in_direction'] = {
   init: function() {
     this.jsonInit({
@@ -102,7 +94,6 @@ motionBlocks['point_in_direction'] = {
   }
 };
 
-// ── change_x / change_y / set_x / set_y ──────────
 motionBlocks['change_x'] = {
   init: function() {
     this.jsonInit({
@@ -147,7 +138,6 @@ motionBlocks['set_y'] = {
   }
 };
 
-// ── Reporter blocks ──────────────────────────────
 motionBlocks['x_position'] = {
   init: function() {
     this.jsonInit({
@@ -184,7 +174,6 @@ motionBlocks['direction_reporter'] = {
   }
 };
 
-// ── go_to (dropdown: random position / mouse-pointer) ──
 motionBlocks['go_to'] = {
   init: function() {
     this.jsonInit({
@@ -204,7 +193,6 @@ motionBlocks['go_to'] = {
   }
 };
 
-// ── glide_to (dropdown: random position / mouse-pointer) ──
 motionBlocks['glide_to'] = {
   init: function() {
     this.jsonInit({
@@ -227,7 +215,6 @@ motionBlocks['glide_to'] = {
   }
 };
 
-// ── point_towards ──
 motionBlocks['point_towards'] = {
   init: function() {
     this.jsonInit({
@@ -244,7 +231,6 @@ motionBlocks['point_towards'] = {
   }
 };
 
-// ── if_on_edge_bounce ──
 motionBlocks['if_on_edge_bounce'] = {
   init: function() {
     this.jsonInit({
@@ -256,7 +242,6 @@ motionBlocks['if_on_edge_bounce'] = {
   }
 };
 
-// ── set_rotation_style ──
 motionBlocks['set_rotation_style'] = {
   init: function() {
     this.jsonInit({
@@ -276,4 +261,3 @@ motionBlocks['set_rotation_style'] = {
     });
   }
 };
-

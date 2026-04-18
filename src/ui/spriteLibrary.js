@@ -1,8 +1,4 @@
-/**
- * spriteLibrary.js — Built-in sprite library with inline SVG data URIs.
- * Each entry: { name, category, svg (data URI string) }
- */
-
+// built-in sprite library with inline svg data uris
 const svg = (raw) => `data:image/svg+xml,${encodeURIComponent(raw)}`;
 
 export const SPRITE_LIBRARY = [

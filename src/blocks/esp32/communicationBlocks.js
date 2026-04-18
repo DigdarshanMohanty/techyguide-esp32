@@ -1,3 +1,4 @@
+// esp32 communication blocks — serial, i2c, spi
 import * as Blockly from "blockly/core";
 
 const SERIAL_OPTIONS = [["0","0"],["1","1"],["2","2"]];

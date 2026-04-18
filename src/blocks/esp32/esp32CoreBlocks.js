@@ -1,3 +1,4 @@
+// esp32 core blocks — pin mode, digital/analog read/write, delay
 import * as Blockly from "blockly/core";
 
 const PIN_OPTIONS = [

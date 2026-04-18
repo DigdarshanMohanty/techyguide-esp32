@@ -1,3 +1,4 @@
+// esp32 iot blocks — wifi, mqtt, http requests
 import * as Blockly from "blockly/core";
 
 const createFile = {

@@ -1,3 +1,4 @@
+// block definition for digital_write
 import * as Blockly from "blockly/core";
 
 const pin = {

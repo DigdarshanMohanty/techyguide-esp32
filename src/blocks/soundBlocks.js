@@ -1,7 +1,4 @@
-/**
- * Scratch-style Sound blocks for Blockly.
- */
-
+// scratch sound blocks — play, stop, change volume
 export const soundBlocks = {};
 
 soundBlocks['play_sound_until_done'] = {

@@ -1,29 +1,17 @@
-/**
- * ConnectModal — "Connect to Port" with real Web Serial & Web Bluetooth APIs.
- * Tracks connection state: Disconnected → Connecting → Connected.
- */
-
-// ── State ────────────────────────────────────────────
+// web serial and web bluetooth connection modal for hardware boards
 let connectOverlay = null;
 let connectBtn = null;
 let currentTab = 'serial';
 
-/** @type {'disconnected'|'connecting'|'connected'} */
 let connectionState = 'disconnected';
 
-/** @type {SerialPort|null} */
 let activeSerialPort = null;
 
-/** @type {BluetoothDevice|null} */
 let activeBtDevice = null;
 
-/** @type {SerialPort[]} */
 let authorizedPorts = [];
 
-/** @type {BluetoothDevice[]} */
 let discoveredBtDevices = [];
-
-// ── Public API ───────────────────────────────────────
 
 export function initConnectButton() {
   const header = document.getElementById('appHeader');
@@ -39,7 +27,6 @@ export function initConnectButton() {
 
   _createConnectModal();
 
-  // Pre-fetch authorized serial ports on load
   _refreshSerialPorts();
 }
 
@@ -57,15 +44,13 @@ export function openConnectModal() {
   connectOverlay.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
   connectOverlay.querySelector('[data-tab="serial"]')?.classList.add('active');
   _renderBody();
-  connectOverlay.offsetHeight; // reflow
+  connectOverlay.offsetHeight; 
   connectOverlay.classList.add('open');
 }
 
 export function closeConnectModal() {
   if (connectOverlay) connectOverlay.classList.remove('open');
 }
-
-// ── Connect Button UI ────────────────────────────────
 
 function _updateConnectBtnUI() {
   if (!connectBtn) return;
@@ -105,8 +90,6 @@ function _updateConnectBtnUI() {
   }
 }
 
-// ── Modal Creation ───────────────────────────────────
-
 function _createConnectModal() {
   connectOverlay = document.createElement('div');
   connectOverlay.className = 'modal-overlay';
@@ -121,7 +104,7 @@ function _createConnectModal() {
             <span class="status-dot"></span>
             <span id="connStatusText">Disconnected</span>
           </div>
-          <button class="modal-close" id="connectModalClose">×</button>
+          <button class="modal-close" id="connectModalClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
         </div>
       </div>
       <div class="modal-tabs">
@@ -149,13 +132,11 @@ function _createConnectModal() {
 
   document.body.appendChild(connectOverlay);
 
-  // Close
   connectOverlay.querySelector('#connectModalClose').addEventListener('click', closeConnectModal);
   connectOverlay.addEventListener('click', e => {
     if (e.target === connectOverlay) closeConnectModal();
   });
 
-  // Tab switching
   connectOverlay.querySelectorAll('.modal-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       currentTab = tab.dataset.tab;
@@ -165,7 +146,6 @@ function _createConnectModal() {
     });
   });
 
-  // Scan / Refresh
   connectOverlay.querySelector('#connectScanBtn').addEventListener('click', async () => {
     if (currentTab === 'serial') {
       await _requestNewSerialPort();
@@ -176,8 +156,6 @@ function _createConnectModal() {
 
   _updateStatusBadge();
 }
-
-// ── Status Badge ─────────────────────────────────────
 
 function _updateStatusBadge() {
   const badge = document.getElementById('connStatusBadge');
@@ -204,8 +182,6 @@ function _setState(newState) {
   _updateStatusBadge();
 }
 
-// ── Render Body ──────────────────────────────────────
-
 function _renderBody() {
   const body = document.getElementById('connectModalBody');
   if (!body) return;
@@ -216,10 +192,6 @@ function _renderBody() {
     _renderBluetoothDevices(body);
   }
 }
-
-// ══════════════════════════════════════════════════════
-//  WEB SERIAL API
-// ══════════════════════════════════════════════════════
 
 async function _refreshSerialPorts() {
   if (!('serial' in navigator)) return;
@@ -239,13 +211,13 @@ async function _requestNewSerialPort() {
 
   try {
     const port = await navigator.serial.requestPort();
-    // Add to list if not already
+    
     if (!authorizedPorts.includes(port)) {
       authorizedPorts.push(port);
     }
     _renderBody();
   } catch (err) {
-    // User cancelled the prompt
+    
     if (err.name !== 'NotFoundError') {
       console.warn('[Serial] requestPort error:', err);
     }
@@ -255,7 +227,6 @@ async function _requestNewSerialPort() {
 async function _connectSerialPort(port) {
   if (connectionState === 'connected' && activeSerialPort === port) return;
 
-  // Disconnect any existing port first
   await _disconnectSerial();
 
   _setState('connecting');
@@ -266,7 +237,6 @@ async function _connectSerialPort(port) {
     activeSerialPort = port;
     _setState('connected');
 
-    // Listen for disconnect
     port.addEventListener('disconnect', () => {
       activeSerialPort = null;
       _setState('disconnected');
@@ -287,7 +257,7 @@ async function _disconnectSerial() {
   if (activeSerialPort) {
     try {
       await activeSerialPort.close();
-    } catch (e) { /* port may already be closed */ }
+    } catch (e) {  }
     activeSerialPort = null;
   }
   _setState('disconnected');
@@ -306,7 +276,7 @@ function _renderSerialPorts(body) {
     body.innerHTML = `
       <div class="port-empty-state">
         <div style="text-align:center">
-          <div style="font-size:24px;margin-bottom:8px;">⚠️</div>
+          <div style="font-size:24px;margin-bottom:8px;"></div>
           <div>Web Serial API is not supported in this browser.</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Use Google Chrome or Microsoft Edge.</div>
         </div>
@@ -319,7 +289,7 @@ function _renderSerialPorts(body) {
     body.innerHTML = `
       <div class="port-empty-state">
         <div style="text-align:center">
-          <div style="font-size:24px;margin-bottom:8px;">🔌</div>
+          <div style="font-size:24px;margin-bottom:8px;"></div>
           <div>No authorized serial ports.</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Click <strong>Scan / Refresh</strong> to select a USB device.</div>
         </div>
@@ -335,7 +305,7 @@ function _renderSerialPorts(body) {
         const isConnecting = activeSerialPort === port && connectionState === 'connecting';
         const label = _getPortLabel(port);
         const btnClass = isActive ? 'port-connect-btn port-connect-btn--connected' : 'port-connect-btn';
-        const btnText = isActive ? '✓ Connected' : isConnecting ? 'Connecting…' : 'Connect';
+        const btnText = isActive ? 'Connected' : isConnecting ? 'Connecting…' : 'Connect';
 
         return `
           <div class="port-item" data-port-index="${i}">
@@ -349,7 +319,6 @@ function _renderSerialPorts(body) {
     </div>
   `;
 
-  // Wire connect buttons
   body.querySelectorAll('[data-action="connect-serial"]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const idx = parseInt(btn.dataset.portIdx);
@@ -358,10 +327,6 @@ function _renderSerialPorts(body) {
     });
   });
 }
-
-// ══════════════════════════════════════════════════════
-//  WEB BLUETOOTH API
-// ══════════════════════════════════════════════════════
 
 async function _scanBluetooth() {
   if (!('bluetooth' in navigator)) {
@@ -375,7 +340,6 @@ async function _scanBluetooth() {
       optionalServices: ['battery_service'],
     });
 
-    // Add if not duplicate
     if (!discoveredBtDevices.find(d => d.id === device.id)) {
       discoveredBtDevices.push(device);
     }
@@ -401,7 +365,6 @@ async function _connectBtDevice(device) {
     activeBtDevice = device;
     _setState('connected');
 
-    // Listen for disconnect
     device.addEventListener('gattserverdisconnected', () => {
       activeBtDevice = null;
       _setState('disconnected');
@@ -423,7 +386,7 @@ async function _disconnectBt() {
   if (activeBtDevice && activeBtDevice.gatt.connected) {
     try {
       activeBtDevice.gatt.disconnect();
-    } catch (e) { /* may already be disconnected */ }
+    } catch (e) {  }
   }
   activeBtDevice = null;
   _setState('disconnected');
@@ -434,7 +397,7 @@ function _renderBluetoothDevices(body) {
     body.innerHTML = `
       <div class="port-empty-state">
         <div style="text-align:center">
-          <div style="font-size:24px;margin-bottom:8px;">⚠️</div>
+          <div style="font-size:24px;margin-bottom:8px;"></div>
           <div>Web Bluetooth API is not supported.</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Use Chrome on macOS, Android, or ChromeOS.</div>
         </div>
@@ -447,7 +410,7 @@ function _renderBluetoothDevices(body) {
     body.innerHTML = `
       <div class="port-empty-state">
         <div style="text-align:center">
-          <div style="font-size:24px;margin-bottom:8px;">📡</div>
+          <div style="font-size:24px;margin-bottom:8px;"></div>
           <div>No Bluetooth 4.0 devices found</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Click <strong>Scan / Refresh</strong> to discover nearby devices.</div>
         </div>
@@ -463,11 +426,11 @@ function _renderBluetoothDevices(body) {
         const isConnecting = activeBtDevice === device && connectionState === 'connecting';
         const name = device.name || `Device (${device.id.slice(0, 8)}…)`;
         const btnClass = isActive ? 'port-connect-btn port-connect-btn--connected' : 'port-connect-btn';
-        const btnText = isActive ? '✓ Connected' : isConnecting ? 'Connecting…' : 'Connect';
+        const btnText = isActive ? 'Connected' : isConnecting ? 'Connecting…' : 'Connect';
 
         return `
           <div class="port-item" data-bt-index="${i}">
-            <span>📡 ${name}</span>
+            <span>${name}</span>
             <button class="${btnClass}" data-action="connect-bt" data-bt-idx="${i}" ${isActive ? 'disabled' : ''}>
               ${btnText}
             </button>
@@ -477,7 +440,6 @@ function _renderBluetoothDevices(body) {
     </div>
   `;
 
-  // Wire connect buttons
   body.querySelectorAll('[data-action="connect-bt"]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const idx = parseInt(btn.dataset.btIdx);

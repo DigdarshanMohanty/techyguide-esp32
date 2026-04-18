@@ -1,11 +1,6 @@
-/**
- * SpriteEngine — Core sprite data model for the Scratch-like environment.
- * Each sprite has position, direction, size, costumes, and visual state.
- */
-
+// sprite data model — position, costumes, pen state, and movement logic
 let nextSpriteId = 1;
 
-// ── Built-in Scratch Cat SVG (simplified) ─────────────
 const SCRATCH_CAT_SVG = `data:image/svg+xml,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
   <g fill="none" stroke="#000" stroke-width="1.5">
@@ -47,42 +42,34 @@ export class Sprite {
     this.id = nextSpriteId++;
     this.name = name || `Sprite${this.id}`;
 
-    // ── Position & orientation (Scratch coordinate system) ──
-    this.x = options.x || 0;           // center-origin: -240 to 240
-    this.y = options.y || 0;           // center-origin: -180 to 180
-    this.direction = options.direction || 90; // degrees, 0=up, 90=right (Scratch convention)
-    this.size = options.size || 100;    // percentage, 100 = normal
+    this.x = options.x || 0;           
+    this.y = options.y || 0;           
+    this.direction = options.direction || 90; 
+    this.size = options.size || 100;    
 
-    // ── Visual state ──
     this.visible = true;
     this.costumes = [];
     this.currentCostumeIndex = 0;
-    this.sayBubble = null;      // { text, type: 'say'|'think', expiresAt }
+    this.sayBubble = null;      
     this.opacity = 1;
 
-    // ── Pen ──
     this.penDown = false;
     this.penColor = '#4C97FF';
     this.penSize = 1;
-    this.penTrails = [];  // [{x1, y1, x2, y2, color, size}]
+    this.penTrails = [];  
 
-    // ── Costume image cache ──
     this._costumeImages = new Map();
     this._loaded = false;
 
-    // ── Workspace state (Blockly JSON) ──
     this.workspaceState = null;
 
-    // Add default costume — use custom source if provided, otherwise Scratch Cat
     const costumeSrc = options.costumeSrc || SCRATCH_CAT_SVG;
     const costumeName = options.costumeSrc ? name.toLowerCase() : 'cat';
     this.addCostume(costumeName, costumeSrc);
   }
 
-  // ── Costume management ─────────────────────────────
   addCostume(name, src) {
     this.costumes.push({ name, src });
-    // Preload image
     const img = new Image();
     img.src = src;
     img.onload = () => {
@@ -118,7 +105,6 @@ export class Sprite {
     }
   }
 
-  // ── Movement ───────────────────────────────────────
   moveSteps(steps) {
     const radians = (this.direction - 90) * (Math.PI / 180);
     const oldX = this.x;
@@ -179,7 +165,6 @@ export class Sprite {
     this.y = Math.max(-180, Math.min(180, this.y));
   }
 
-  // ── Looks ──────────────────────────────────────────
   say(text, seconds = 0) {
     this.sayBubble = {
       text: String(text),
@@ -211,7 +196,6 @@ export class Sprite {
   show() { this.visible = true; }
   hide() { this.visible = false; }
 
-  // ── Sensing ────────────────────────────────────────
   isTouchingEdge() {
     const halfW = 24 * (this.size / 100);
     const halfH = 24 * (this.size / 100);
@@ -227,7 +211,6 @@ export class Sprite {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  // ── Glide (returns a promise for async execution) ──
   glideToXY(x, y, seconds) {
     return new Promise((resolve) => {
       const startX = this.x;
@@ -238,7 +221,7 @@ export class Sprite {
       const step = () => {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
-        // Ease in-out
+        
         const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
         this.x = startX + (x - startX) * eased;
         this.y = startY + (y - startY) * eased;

@@ -1,3 +1,4 @@
+// esp32 terminal blocks — print, input, clear
 import * as Blockly from "blockly/core";
 
 const terminalData = {

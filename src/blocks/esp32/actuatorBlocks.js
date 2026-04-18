@@ -1,6 +1,6 @@
+// esp32 actuator blocks — servo, motor, buzzer, led
 import * as Blockly from "blockly/core";
 
-// ── Pin options (ESP32 GPIO) ──
 const PIN_OPTIONS = [
   ["2","2"],["4","4"],["5","5"],["12","12"],["13","13"],
   ["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],
@@ -10,8 +10,6 @@ const PIN_OPTIONS = [
 
 const SERVO_OPTIONS = [["1","1"],["2","2"],["3","3"],["4","4"]];
 const MOTOR_OPTIONS = [["1","1"],["2","2"],["3","3"],["4","4"]];
-
-// ── Block definitions ──
 
 const enableServo = {
   type: "esp32_enable_servo",

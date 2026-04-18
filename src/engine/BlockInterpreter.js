@@ -1,15 +1,6 @@
-/**
- * BlockInterpreter — Runtime engine that walks Blockly block trees
- * and drives sprite actions. Supports concurrent threads, yielding,
- * and event-based hat blocks.
- */
-
+// scratch-style block interpreter — executes block scripts as async threads
 import eventBus, { Events } from './EventBus.js';
 
-/**
- * A Thread represents a single running script (chain of blocks).
- * Threads can yield (wait, glide) and resume.
- */
 class Thread {
   constructor(sprite, topBlock, interpreter) {
     this.sprite = sprite;
@@ -41,9 +32,6 @@ class Thread {
     if (this._cancelled) throw new Error('THREAD_STOPPED');
   }
 
-  /**
-   * Execute a block and all blocks connected after it.
-   */
   async _executeBlock(block) {
     let current = block;
     while (current) {
@@ -53,9 +41,6 @@ class Thread {
     }
   }
 
-  /**
-   * Evaluate a value input (reporter block or shadow).
-   */
   _evalValue(block, inputName, defaultValue) {
     const input = block.getInput(inputName);
     if (!input) return defaultValue;
@@ -66,25 +51,19 @@ class Thread {
     return this._evalReporter(targetBlock);
   }
 
-  /**
-   * Evaluate a reporter block (returns a value).
-   */
   _evalReporter(block) {
     if (!block) return '';
 
     const type = block.type;
 
-    // ── Math / Text shadow blocks ──
     if (type === 'math_number') return Number(block.getFieldValue('NUM')) || 0;
     if (type === 'text') return block.getFieldValue('TEXT') || '';
     if (type === 'logic_boolean') return block.getFieldValue('BOOL') === 'TRUE';
 
-    // ── Motion reporters ──
     if (type === 'x_position') return this.sprite.x;
     if (type === 'y_position') return this.sprite.y;
     if (type === 'direction_reporter') return this.sprite.direction;
 
-    // ── Sensing reporters ──
     if (type === 'mouse_x') return this.interpreter.renderer?.mouseX || 0;
     if (type === 'mouse_y') return this.interpreter.renderer?.mouseY || 0;
     if (type === 'answer_block') return this.interpreter.answer || '';
@@ -105,7 +84,6 @@ class Thread {
       return false;
     }
 
-    // ── Math operations ──
     if (type === 'math_arithmetic') {
       const a = this._evalValue(block, 'A', 0);
       const b = this._evalValue(block, 'B', 0);
@@ -134,7 +112,6 @@ class Thread {
       return Math.round(num);
     }
 
-    // ── Logic operations ──
     if (type === 'logic_compare') {
       const a = this._evalValue(block, 'A', 0);
       const b = this._evalValue(block, 'B', 0);
@@ -159,7 +136,6 @@ class Thread {
       return !this._evalValue(block, 'BOOL', false);
     }
 
-    // ── Text operations ──
     if (type === 'text_join') {
       let result = '';
       let i = 0;
@@ -174,7 +150,6 @@ class Thread {
       return String(val).length;
     }
 
-    // ── Variables ──
     if (type === 'variables_get') {
       const varName = block.getFieldValue('VAR');
       return this.interpreter.variables[varName] ?? 0;
@@ -183,15 +158,12 @@ class Thread {
     return '';
   }
 
-  /**
-   * Dispatch a statement block to the correct handler.
-   */
   async _dispatch(block) {
     const type = block.type;
     const sprite = this.sprite;
 
     switch (type) {
-      // ── Motion ──
+      
       case 'move_steps':
         sprite.moveSteps(this._evalValue(block, 'STEPS', 10));
         await this._yieldFrame();
@@ -241,7 +213,6 @@ class Thread {
         sprite.setY(this._evalValue(block, 'Y', 0));
         break;
 
-      // ── Looks ──
       case 'say_for_secs': {
         const msg = this._evalValue(block, 'MESSAGE', 'Hello!');
         const secs = this._evalValue(block, 'SECS', 2);
@@ -290,7 +261,6 @@ class Thread {
         sprite.hide();
         break;
 
-      // ── Control ──
       case 'wait_seconds': {
         const dur = this._evalValue(block, 'DURATION', 1);
         await this._wait(dur * 1000);
@@ -315,7 +285,7 @@ class Thread {
           if (substackBlock) await this._executeBlock(substackBlock);
           await this._yieldFrame();
         }
-        break; // unreachable, but for clarity
+        break; 
       }
 
       case 'if_block': {
@@ -349,7 +319,6 @@ class Thread {
         throw new Error('THREAD_STOPPED');
       }
 
-      // ── Events ──
       case 'broadcast_block': {
         const msg = this._evalValue(block, 'MESSAGE', 'message1');
         eventBus.emit(Events.BROADCAST, msg);
@@ -363,7 +332,6 @@ class Thread {
         break;
       }
 
-      // ── Variables ──
       case 'variables_set': {
         const varName = block.getFieldValue('VAR');
         const val = this._evalValue(block, 'VALUE', 0);
@@ -379,22 +347,16 @@ class Thread {
       }
 
       default:
-        // Unknown block type — skip
+        
         console.log('Unknown block type:', type);
         break;
     }
   }
 
-  /**
-   * Yield one animation frame — lets the renderer draw.
-   */
   _yieldFrame() {
     return new Promise(resolve => requestAnimationFrame(resolve));
   }
 
-  /**
-   * Wait for a duration in ms, checking for cancellation.
-   */
   _wait(ms) {
     return new Promise((resolve) => {
       const start = Date.now();
@@ -414,9 +376,6 @@ class Thread {
   }
 }
 
-/**
- * BlockInterpreter — manages all threads across all sprites.
- */
 export class BlockInterpreter {
   constructor(spriteStore, workspace) {
     this.spriteStore = spriteStore;
@@ -427,7 +386,6 @@ export class BlockInterpreter {
     this.answer = '';
     this.keysDown = new Set();
 
-    // ── Keyboard tracking ──
     document.addEventListener('keydown', (e) => {
       this.keysDown.add(e.key);
       eventBus.emit(Events.KEY_PRESS, e.key);
@@ -436,7 +394,6 @@ export class BlockInterpreter {
       this.keysDown.delete(e.key);
     });
 
-    // ── Stop all handler ──
     eventBus.on(Events.STOP_ALL, () => this.stopAll());
   }
 
@@ -444,10 +401,6 @@ export class BlockInterpreter {
     this.renderer = renderer;
   }
 
-  /**
-   * Start all scripts triggered by the green flag.
-   * Finds all `when_flag_clicked` hat blocks in all sprites' workspaces.
-   */
   startAll() {
     this.stopAll();
 
@@ -455,26 +408,17 @@ export class BlockInterpreter {
     const currentSelected = this.spriteStore.getSelectedSprite();
 
     for (const sprite of sprites) {
-      // We need to load each sprite's workspace to find hat blocks.
-      // For the currently selected sprite, use the live workspace.
-      // For other sprites, use their saved workspace state.
+
       if (sprite.id === currentSelected?.id) {
-        // Use the live workspace
+        
         this._startHatBlocksForSprite(sprite, this.workspace);
-      } else if (sprite.workspaceState) {
-        // For non-selected sprites, we need to load their workspace temporarily
-        // For now, we only support executing blocks for the selected sprite
-        // (multi-sprite execution will require workspace per sprite)
-        // TODO: Full multi-sprite workspace support
       }
+      
     }
 
     eventBus.emit(Events.GREEN_FLAG);
   }
 
-  /**
-   * Find and start all hat blocks for a given sprite in a workspace.
-   */
   _startHatBlocksForSprite(sprite, workspace) {
     const topBlocks = workspace.getTopBlocks(false);
 
@@ -492,7 +436,7 @@ export class BlockInterpreter {
         const key = block.getFieldValue('KEY');
         const nextBlock = block.getNextBlock();
         if (nextBlock) {
-          // Register key press handler
+          
           const unsub = eventBus.on(Events.KEY_PRESS, (pressedKey) => {
             if (pressedKey === key || (key === 'space' && pressedKey === ' ')) {
               const thread = new Thread(sprite, nextBlock, this);
@@ -500,7 +444,7 @@ export class BlockInterpreter {
               thread.run();
             }
           });
-          // Store unsubscribe so we can clean up on stop
+          
           this._keyUnsubs = this._keyUnsubs || [];
           this._keyUnsubs.push(unsub);
         }
@@ -537,14 +481,10 @@ export class BlockInterpreter {
     }
   }
 
-  /**
-   * Stop all running threads.
-   */
   stopAll() {
     this.threads.forEach(t => t.stop());
     this.threads = [];
 
-    // Unsubscribe key/broadcast handlers
     if (this._keyUnsubs) {
       this._keyUnsubs.forEach(fn => fn());
       this._keyUnsubs = [];

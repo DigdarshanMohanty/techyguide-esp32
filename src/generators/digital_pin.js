@@ -1,3 +1,4 @@
+// python generator for digital_write — emits Pin().value()
 import { Order } from "blockly/python";
 export const forBlock = Object.create(null);
 

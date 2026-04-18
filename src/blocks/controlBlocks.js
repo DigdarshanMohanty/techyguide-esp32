@@ -1,7 +1,4 @@
-/**
- * Scratch-style Control blocks for Blockly.
- */
-
+// scratch control blocks — wait, repeat, if-else, forever, stop
 export const controlBlocks = {};
 
 controlBlocks['wait_seconds'] = {
@@ -193,4 +190,3 @@ controlBlocks['count_loop'] = {
     });
   }
 };
-

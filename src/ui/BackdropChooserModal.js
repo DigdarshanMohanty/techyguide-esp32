@@ -1,15 +1,9 @@
-/**
- * BackdropChooserModal — Modal overlay to pick from built-in backdrops
- * or upload a custom backdrop image.
- */
+// modal for selecting or uploading backdrops from the built-in library
 import { BACKDROP_LIBRARY } from './backdropLibrary.js';
 import spriteStore from '../engine/SpriteStore.js';
 
 let modalEl = null;
 
-/**
- * Open the backdrop chooser modal.
- */
 export function openBackdropChooser() {
   if (modalEl) return;
 
@@ -19,7 +13,7 @@ export function openBackdropChooser() {
     <div class="chooser-modal">
       <div class="chooser-header">
         <h3>Choose a Backdrop</h3>
-        <button class="chooser-close" id="closeBackdropChooser">&times;</button>
+        <button class="chooser-close" id="closeBackdropChooser"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
 
       <div class="chooser-tabs">

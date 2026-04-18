@@ -1,7 +1,4 @@
-/**
- * Scratch-style Looks blocks for Blockly.
- */
-
+// scratch looks blocks — say, think, show, hide, costume, size
 export const looksBlocks = {};
 
 looksBlocks['say_for_secs'] = {
@@ -270,4 +267,3 @@ looksBlocks['take_stage_snapshot'] = {
     });
   }
 };
-

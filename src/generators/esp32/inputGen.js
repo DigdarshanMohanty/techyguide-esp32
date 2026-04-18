@@ -1,3 +1,4 @@
+// python generator for esp32 input blocks
 import { Order } from "blockly/python";
 
 export const forBlock = Object.create(null);

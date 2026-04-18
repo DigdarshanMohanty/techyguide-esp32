@@ -1,3 +1,4 @@
+// python generator for esp32 actuator blocks
 import { Order } from "blockly/python";
 
 export const forBlock = Object.create(null);
@@ -13,7 +14,7 @@ forBlock["esp32_set_servo_angle"] = function (block, generator) {
   const pin = block.getFieldValue("PIN");
   const angle = block.getFieldValue("ANGLE");
   generator.definitions_["import_machine"] = "from machine import Pin, PWM";
-  // Map 0-180 degrees to duty cycle (roughly 26-128 for most servos at 50Hz)
+  
   return `PWM(Pin(${pin}), freq=50).duty(int(${angle} / 180 * 102 + 26))\n`;
 };
 

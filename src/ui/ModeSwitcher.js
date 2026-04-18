@@ -1,16 +1,12 @@
-/**
- * ModeSwitcher — Board Selector Modal + Mode Switching.
- * Replaces the old dropdown with a professional grid-based board selector.
- */
-
+// board mode selector — switches between scratch, esp32, and arduino modes
 const BOARDS = [
-  { id: 'scratch', label: 'Scratch', icon: '🐱', description: 'Visual coding' },
-  { id: 'i-bot',   label: 'i-bot',   icon: '🤖', description: 'TechyGuide i-bot' },
-  { id: 't-bot',   label: 't-bot',   icon: '🦾', description: 'TechyGuide t-bot' },
-  { id: 'esp32',   label: 'ESP32',   icon: '⚡', description: 'Espressif ESP32' },
-  { id: 'arduino-uno',  label: 'Arduino Uno',  icon: '🔧', description: 'ATmega328P' },
-  { id: 'arduino-mega', label: 'Arduino Mega', icon: '🔩', description: 'ATmega2560' },
-  { id: 'arduino-nano', label: 'Arduino Nano', icon: '📟', description: 'ATmega328P Mini' },
+  { id: 'scratch', label: 'Scratch', icon: '', description: 'Visual coding' },
+  { id: 'i-bot',   label: 'i-bot',   icon: '', description: 'TechyGuide i-bot' },
+  { id: 't-bot',   label: 't-bot',   icon: '', description: 'TechyGuide t-bot' },
+  { id: 'esp32',   label: 'ESP32',   icon: '', description: 'Espressif ESP32' },
+  { id: 'arduino-uno',  label: 'Arduino Uno',  icon: '', description: 'ATmega328P' },
+  { id: 'arduino-mega', label: 'Arduino Mega', icon: '', description: 'ATmega2560' },
+  { id: 'arduino-nano', label: 'Arduino Nano', icon: '', description: 'ATmega328P Mini' },
 ];
 
 let currentMode = 'scratch';
@@ -18,17 +14,12 @@ let onModeChangeCallback = null;
 let boardOverlay = null;
 let boardBtnLabel = null;
 
-/**
- * Create and mount the mode-switcher in the header.
- * @param {Function} onModeChange - callback(newMode)
- */
 export function initModeSwitcher(onModeChange) {
   onModeChangeCallback = onModeChange;
 
   const header = document.getElementById('appHeader');
   if (!header) return;
 
-  // ── Logo ───────────────────────────────
   const logo = document.createElement('div');
   logo.className = 'header-logo';
   logo.innerHTML = `
@@ -39,7 +30,6 @@ export function initModeSwitcher(onModeChange) {
     <span style="color:#00897B;">Techy</span><span style="color:#E8950F;">Guide</span>
   `;
 
-  // ── Board Selector Button ──────────────
   const boardBtn = document.createElement('button');
   boardBtn.className = 'header-btn';
   boardBtn.id = 'boardSelectorBtn';
@@ -56,11 +46,9 @@ export function initModeSwitcher(onModeChange) {
   `;
   boardBtn.addEventListener('click', () => openBoardModal());
 
-  // ── Spacer ─────────────────────────────
   const spacer = document.createElement('div');
   spacer.className = 'header-spacer';
 
-  // Insert in order: logo, board btn, spacer (then Connect button will be added by ConnectModal)
   header.appendChild(logo);
   header.appendChild(boardBtn);
   header.appendChild(spacer);
@@ -79,7 +67,7 @@ function _createBoardModal() {
     <div class="modal-content" style="width:480px;">
       <div class="modal-header">
         <h3>Select Board</h3>
-        <button class="modal-close" id="boardModalClose">×</button>
+        <button class="modal-close" id="boardModalClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="modal-body">
         <div class="board-grid" id="boardGrid">
@@ -96,13 +84,11 @@ function _createBoardModal() {
 
   document.body.appendChild(boardOverlay);
 
-  // Close handlers
   boardOverlay.querySelector('#boardModalClose').addEventListener('click', closeBoardModal);
   boardOverlay.addEventListener('click', (e) => {
     if (e.target === boardOverlay) closeBoardModal();
   });
 
-  // Board selection
   boardOverlay.querySelectorAll('.board-item').forEach(item => {
     item.addEventListener('click', () => {
       const boardId = item.dataset.board;
@@ -115,27 +101,20 @@ function _selectBoard(boardId) {
   const board = BOARDS.find(b => b.id === boardId);
   if (!board) return;
 
-  // Update visual selection
   boardOverlay.querySelectorAll('.board-item').forEach(item => {
     item.classList.toggle('active', item.dataset.board === boardId);
   });
 
-  // Update header button label
   if (boardBtnLabel) {
     boardBtnLabel.textContent = board.label;
   }
 
-  // Map to internal mode
   const newMode = boardId === 'scratch' ? 'scratch' : boardId;
   switchMode(newMode);
 
-  // Close modal after a brief delay for feedback
   setTimeout(() => closeBoardModal(), 150);
 }
 
-/**
- * Switch between Scratch mode and Board mode.
- */
 function switchMode(newMode) {
   if (newMode === currentMode) return;
   currentMode = newMode;
@@ -166,11 +145,11 @@ function switchMode(newMode) {
 
 export function openBoardModal() {
   if (!boardOverlay) return;
-  // Update active state
+  
   boardOverlay.querySelectorAll('.board-item').forEach(item => {
     item.classList.toggle('active', item.dataset.board === currentMode);
   });
-  boardOverlay.offsetHeight; // reflow
+  boardOverlay.offsetHeight; 
   boardOverlay.classList.add('open');
 }
 
@@ -178,10 +157,7 @@ export function closeBoardModal() {
   if (boardOverlay) boardOverlay.classList.remove('open');
 }
 
-/**
- * Get the currently active mode.
- */
 export function getCurrentMode() {
-  // Scratch mode is 'scratch', all board modes are treated as board modes
+  
   return currentMode === 'scratch' ? 'scratch' : currentMode;
 }

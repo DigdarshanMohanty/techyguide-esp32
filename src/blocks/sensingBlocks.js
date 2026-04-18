@@ -1,7 +1,4 @@
-/**
- * Scratch-style Sensing blocks for Blockly.
- */
-
+// scratch sensing blocks — touching, mouse, key pressed, ask
 export const sensingBlocks = {};
 
 sensingBlocks['touching'] = {
@@ -265,4 +262,3 @@ sensingBlocks['of_stage'] = {
     });
   }
 };
-

@@ -1,11 +1,4 @@
-/**
- * backdropLibrary.js — Built-in backdrop library for the stage.
- * Each entry: { name, type: 'color'|'gradient'|'svg', value }
- *  - color:    value is a hex color string
- *  - gradient: value is a CSS linear-gradient string
- *  - svg:      value is an SVG data URI
- */
-
+// built-in backdrop library — colors, gradients, and svg scenes
 const svg = (raw) => `data:image/svg+xml,${encodeURIComponent(raw)}`;
 
 export const BACKDROP_LIBRARY = [
