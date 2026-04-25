@@ -1,45 +1,63 @@
 /* ══════════════════════════════════════════════════════════
-   TECHYGUIDE — BRANDED DESIGN SYSTEM
-   Teal (#00897B) + Dark Orange (#E8950F). Zero red.
-   Industrial precision. Clean white canvas.
+   TECHYGUIDE — SCRATCH-INSPIRED DESIGN SYSTEM
+   Bold, colorful, playful. Scratch 3.0 vibes.
+   Neo-brutal edges. Strong affordances.
    ══════════════════════════════════════════════════════════ */
 
 /* ── Design Tokens ─────────────────────────────────── */
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9FAFB;
   --bg-tertiary: #ebebeb;
 
-  /* TechyGuide Brand Colors */
+  /* Scratch-inspired palette */
+  --scratch-blue: #4C97FF;
+  --scratch-blue-dark: #3D8BF5;
+  --scratch-blue-light: rgba(76, 151, 255, 0.15);
+  --scratch-green: #4CAF50;
+  --scratch-green-dark: #43A047;
+  --scratch-orange: #FF8C1A;
+  --scratch-orange-dark: #E67E00;
+  --scratch-purple: #9966FF;
+  --scratch-purple-dark: #855CD6;
+
+  /* TechyGuide Brand Colors (kept for non-navbar UI) */
   --teal: #00897B;
   --teal-hover: #00796B;
   --teal-light: rgba(0, 137, 123, 0.08);
   --teal-surface: rgba(0, 137, 123, 0.12);
 
-  --accent: #E8950F;
-  --accent-hover: #D08510;
-  --accent-light: rgba(232, 149, 15, 0.08);
-  --accent-surface: rgba(232, 149, 15, 0.12);
+  --accent: #FF8C1A;
+  --accent-hover: #E67E00;
+  --accent-light: rgba(255, 140, 26, 0.12);
+  --accent-surface: rgba(255, 140, 26, 0.14);
 
   /* Connected state */
-  --connected: #00897B;
-  --connected-light: rgba(0, 137, 123, 0.1);
+  --connected: #4CAF50;
+  --connected-light: rgba(76, 175, 80, 0.15);
 
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --border: #e0e0e0;
-  --border-strong: #cccccc;
-  --header-bg: #1a1a1a;
-  --header-text: #f0f0f0;
-  --code-bg: #1e1e2e;
-  --code-gutter: #2a2a3e;
-  --radius-sm: 3px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.2);
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-muted: #6B7280;
+  
+  --border: #E5E7EB;
+  --border-strong: #D1D5DB;
+  
+  --header-bg: #4C97FF;
+  --header-text: #FFFFFF;
+  
+  --code-bg: #0F172A;
+  --code-gutter: #1E293B;
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.15);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.2);
+  --shadow-brutal: 3px 3px 0px rgba(0,0,0,0.2);
+  
   --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
   --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --transition: 0.15s ease;
@@ -63,63 +81,341 @@ pre, code { overflow: auto; }
 
 input:focus {
   outline: none;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px var(--accent-light) !important;
+  border-color: var(--scratch-blue) !important;
+  box-shadow: 0 0 0 2px var(--scratch-blue-light) !important;
 }
 
-/* ── Header ────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   HEADER — Scratch 3.0 Blue Bar
+   ══════════════════════════════════════════════════════ */
 .app-header {
   display: flex;
   align-items: center;
-  height: 48px;
-  background: var(--header-bg);
+  justify-content: space-between;
+  height: 64px;
   padding: 0 16px;
-  gap: 12px;
+  background: var(--header-bg);
+  color: var(--header-text);
   z-index: 100;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.05);
+  position: sticky;
+  top: 0;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
+/* ── Nav Sections ── */
+.nav-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-section--left {
+  flex-shrink: 0;
+}
+.nav-section--center {
+  flex-shrink: 0;
+}
+.nav-section--right {
+  flex-shrink: 0;
+}
+
+/* ── Logo ── */
 .header-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--header-text);
-  font-weight: 700;
-  font-size: 15px;
+  gap: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: opacity 0.2s;
+  padding-right: 12px;
+  border-right: 2px solid rgba(255,255,255,0.25);
+  margin-right: 4px;
+}
+.header-logo:hover { opacity: 0.9; }
+.header-logo img {
+  height: 44px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+.header-logo-text {
+  font-weight: 800;
+  font-size: 17px;
   letter-spacing: -0.3px;
 }
+.header-logo-text .logo-techy { color: #FFFFFF; }
+.header-logo-text .logo-guide { color: rgba(255,255,255,0.75); }
 
-.header-spacer { flex: 1; }
-
-/* ── Header Buttons (Connect, Board) ───────────────── */
-.header-btn {
+/* ══════════════════════════════════════════════════════
+   NAV BUTTONS — Bold, Chunky, Scratch-style
+   ══════════════════════════════════════════════════════ */
+.nav-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.06);
-  color: var(--header-text);
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
   font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
+  border: 2px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.2);
+  color: #FFFFFF;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  height: 40px;
+  position: relative;
   letter-spacing: 0.2px;
-  text-transform: uppercase;
 }
-.header-btn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+.nav-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
-.header-btn svg { width: 14px; height: 14px; }
+.nav-btn:active {
+  transform: scale(0.97) translateY(0);
+  box-shadow: none;
+}
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.nav-btn svg, .nav-btn i { flex-shrink: 0; color: #FFFFFF; }
 
-.header-btn--active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+/* ── Board Dropdown Button (Orange) ── */
+.nav-btn--board {
+  background: var(--scratch-orange);
+  border-color: var(--scratch-orange-dark);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-brutal);
+}
+.nav-btn--board:hover {
+  background: var(--scratch-orange-dark);
+  border-color: var(--scratch-orange-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(255,140,26,0.35);
+}
+.nav-btn--board.is-open {
+  box-shadow: none;
+  transform: translateY(1px);
+}
+
+.board-dropdown-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.board-dropdown-wrap .nav-btn .btn-chevron {
+  transition: transform 0.25s ease;
+}
+.board-dropdown-wrap .nav-btn.is-open .btn-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Board Dropdown Panel (Neo-Brutal) ── */
+.board-dropdown-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #FFFFFF;
+  border: 2.5px solid #222222;
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 300;
+  box-shadow: 4px 4px 0px #222222;
+  min-width: 380px;
+  animation: dropdownSlideIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.board-dropdown-panel.is-visible { display: flex; gap: 16px; }
+
+@keyframes dropdownSlideIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ── Board Card (Scratch Sprite-Selection Style) ── */
+.board-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border-strong);
+  background: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.board-card:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  border-color: var(--scratch-blue);
+}
+.board-card.is-selected {
+  border-color: var(--scratch-blue);
+  background: var(--scratch-blue-light);
+  box-shadow: 0 0 0 3px var(--scratch-blue-light);
+}
+.board-card-img {
+  width: 120px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.board-card-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  text-align: center;
+}
+.board-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Connect Button (Green) ── */
+.nav-btn--connect {
+  background: var(--scratch-green);
+  border-color: var(--scratch-green-dark);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-brutal);
+}
+.nav-btn--connect:hover {
+  background: var(--scratch-green-dark);
+  border-color: var(--scratch-green-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(76,175,80,0.35);
+}
+.nav-btn--connect .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.nav-btn--connect.is-connected {
+  background: #388E3C;
+  border-color: #2E7D32;
+}
+.nav-btn--connect.is-connected .status-dot {
+  background: #A5D6A7;
+  box-shadow: 0 0 8px rgba(165, 214, 167, 0.7);
+}
+.nav-btn--connect.is-connecting .status-dot {
+  background: #FFF176;
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+/* ══════════════════════════════════════════════════════
+   VIEW TOGGLE — Professional Pill Tabs
+   ══════════════════════════════════════════════════════ */
+.header-tab-group {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 3px;
+  flex-shrink: 0;
+  height: 36px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+.header-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 100%;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.header-tab:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+.header-tab.active {
+  background: #FFFFFF;
+  color: var(--scratch-blue);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.header-tab svg {
+  width: 14px;
+  height: 14px;
+}
+.header-tab.active svg {
+  color: currentColor;
+}
+
+/* ── Upload Button (Orange, matches Board family) ── */
+.nav-btn--upload {
+  background: var(--scratch-orange);
+  border-color: var(--scratch-orange-dark);
+  color: #FFFFFF;
+  font-weight: 700;
+  gap: 6px;
+  box-shadow: var(--shadow-brutal);
+}
+.nav-btn--upload:hover {
+  background: var(--scratch-orange-dark);
+  border-color: var(--scratch-orange-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(255,140,26,0.35);
+}
+.nav-btn--upload:active {
+  transform: scale(0.97) translateY(0);
+  box-shadow: none;
+}
+
+/* ── Icon sizing inside nav buttons ── */
+.nav-btn svg, .header-tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Tooltip ── */
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #1E293B;
+  color: #F8FAFC;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 500;
+}
+[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ── Mode Dropdown (kept as fallback) ──────────────── */
@@ -176,7 +472,7 @@ input:focus {
   display: flex;
   width: 100%;
   max-width: 100vw;
-  height: calc(100vh - 48px);
+  height: calc(100vh - 64px);
 }
 
 #blocklyDiv {
@@ -436,7 +732,7 @@ input:focus {
 }
 .fab-btn:hover { transform: scale(1.1); background: var(--accent-hover); }
 .add-backdrop-fab { background: var(--text-primary); bottom: -15px; left: 20px; }
-.add-backdrop-fab:hover { background: #333; }
+
 
 /* ── Blockly Overrides ── */
 .blocklyToolboxCategoryContainer {
@@ -479,27 +775,28 @@ input:focus {
 #color-7 { background: #59c059; }
 #color-8 { background: #ff8c1a; }
 #color-9 { background: #00a69c; }
-#color-10 { background: var(--accent); }
+#color-10 { background: var(--scratch-blue); }
 
+/* ── ESP32 Subcategory Labels ── */
 .esp32-subcategory-label .blocklyFlyoutLabelText {
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 800 !important;
-  fill: var(--teal) !important;
+  fill: var(--scratch-blue) !important;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   paint-order: stroke fill !important;
   stroke: var(--bg-primary) !important;
-  stroke-width: 6px !important;
+  stroke-width: 5px !important;
   stroke-linecap: round !important;
   stroke-linejoin: round !important;
   transform: translateX(8px);
 }
 
-/* ── ESP32 Category Divider (accent bar) ── */
+/* ── ESP32 Category Divider ── */
 .blocklyFlyoutLabel.esp32-subcategory-label {
-  border-left: 3px solid var(--accent) !important;
-  margin: 8px 0 4px 12px !important;
-  padding-left: 8px !important;
+  border-left: 4px solid var(--scratch-blue) !important;
+  margin: 12px 0 6px 12px !important;
+  padding-left: 10px !important;
 }
 
 [id^="color-"] {
@@ -517,15 +814,16 @@ input:focus {
 
 /* ── ESP32 Block Styling Overrides ─────────────────── */
 .blocklyDraggable .blocklyEditableText rect {
-  rx: 3 !important;
-  ry: 3 !important;
-  stroke: rgba(0,0,0,0.12) !important;
+  rx: 4 !important;
+  ry: 4 !important;
+  stroke: rgba(0,0,0,0.1) !important;
   stroke-width: 1 !important;
 }
 
 .blocklyDropDownDiv .blocklyMenu {
   font-family: var(--font-ui) !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -534,75 +832,193 @@ input:focus {
 #boardPane {
   background: var(--code-bg);
   gap: 0;
-}
-
-.code-editor-header {
+  flex-direction: column;
+  }
+  
+  /* ── Board Sub-views ── */
+  .board-subview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  
+  #boardStageView {
+    background: var(--bg-primary);
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: auto;
+  }
+  
+  #boardStageSlot {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  
+  #boardStageSlot #stageContainer {
+    width: 100%;
+    height: 360px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+/* ── 2. Code Editor Panel ── */
+.editor-header {
   display: flex;
   align-items: center;
-  height: 36px;
-  background: #16162a;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  justify-content: space-between;
+  height: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--code-bg);
   padding: 0 12px;
-  gap: 12px;
+  flex-shrink: 0;
 }
 
-.code-tab {
+.file-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #aaa;
-  border-bottom: 2px solid transparent;
-  font-family: var(--font-ui);
-}
-.code-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
-.code-tab svg { width: 14px; height: 14px; }
-
-.code-line-count {
-  margin-left: auto;
-  font-size: 10px;
-  color: #555;
   font-family: var(--font-mono);
+  font-size: 12px;
+  color: #FFFFFF;
+  background-color: transparent;
+  height: 100%;
+  padding: 0 16px;
+  border-bottom: 2px solid var(--accent);
 }
 
-/* ── Code Editor Body ── */
+.env-dropdown {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 0;
+  outline: none;
+}
+
+.editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  height: 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 12px;
+  background-color: var(--code-bg);
+  flex-shrink: 0;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #E5E7EB;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolbar-btn svg {
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+}
+
+
+.toolbar-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+#uploadBtn {
+  background-color: var(--accent);
+  color: #FFFFFF;
+}
+
+#uploadBtn:hover {
+  background-color: var(--accent-hover);
+}
+
+#boardCodeView {
+  background-color: var(--code-bg);
+}
+
+/* ── Code Editor Body (gutter + textarea) ── */
 .code-editor-body {
   flex: 1;
   display: flex;
-  overflow: auto;
+  overflow: hidden;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.6;
+  min-height: 0;
+    position: relative;
 }
 
 .code-gutter {
-  flex: 0 0 40px;
+  flex: 0 0 44px;
   background: var(--code-gutter);
-  color: #555;
+  color: #64748B;
   text-align: right;
-  padding: 12px 8px 12px 0;
+  padding: 10px 8px 10px 0;
   user-select: none;
   font-size: 12px;
   line-height: 1.6;
+  overflow: hidden;
 }
 .code-gutter div {
   height: 1.6em;
 }
 
+/* Editable code textarea */
+.code-textarea {
+  flex: 1;
+  padding: 10px 16px;
+  color: #cdd6f4;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 2;
+  caret-color: var(--accent);
+  -webkit-text-fill-color: #cdd6f4;
+}
+
+.code-textarea::placeholder {
+  color: #444;
+  -webkit-text-fill-color: #444;
+}
+
+.code-textarea:focus {
+  outline: none;
+}
+
+/* Selection styling inside textarea */
+.code-textarea::selection {
+  background: rgba(194, 65, 12, 0.3);
+}
+
+/* Deprecated but kept for backwards compat — the old div-based code view */
 .code-content {
   flex: 1;
-  padding: 12px 16px;
+  padding: 10px 16px;
   color: #cdd6f4;
   white-space: pre;
   overflow-x: auto;
 }
 
-/* ── Python Syntax Highlighting ── */
+/* ── Python Syntax Highlighting (kept for future overlay use) ── */
 .py-keyword { color: #c678dd; font-weight: 600; }
 .py-builtin { color: #e5c07b; }
 .py-string  { color: #98c379; }
@@ -619,6 +1035,7 @@ input:focus {
   padding: 10px 12px;
   background: #16162a;
   border-top: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
 }
 
 .code-action-btn {
@@ -676,8 +1093,9 @@ input:focus {
 .upload-btn:disabled { background: #334155; color: #64748b; }
 
 .pane-section-label { display: none; }
-#generatedCode { display: none; }
-#uploadBtn { display: none; }
+#generatedCode {
+  display: none;
+}
 
 /* ── Backdrop Preview ────────────────────────── */
 .backdrop-preview {
@@ -942,58 +1360,7 @@ input:focus {
 }
 .refresh-btn svg { width: 14px; height: 14px; }
 
-/* ── Board Selector Grid ── */
-.board-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
 
-.board-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 12px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition);
-  background: var(--bg-primary);
-}
-.board-item:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-.board-item.active {
-  border-color: var(--accent);
-  background: var(--accent-light);
-}
-
-.board-icon {
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  font-size: 28px;
-}
-.board-icon img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-}
-
-.board-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-primary);
-  text-align: center;
-  letter-spacing: 0.2px;
-}
 
 /* ══════════════════════════════════════════════════════
    CHOOSER MODAL (Sprite/Backdrop — existing, restyled)

@@ -6,10 +6,10 @@
     <title>TechyGuide — Block Coding</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script defer src="bundle.js"></script></head>
   <body class="mode-scratch">
-    <!-- ── Header ─────────────────────────────────── -->
+    <!-- ── Header (populated by ModeSwitcher.js) ───── -->
     <header id="appHeader" class="app-header"></header>
 
     <!-- ── Main Layout ────────────────────────────── -->
@@ -20,20 +20,73 @@
       <!-- RIGHT PANE: Scratch mode (default) -->
       <div id="scratchPane" class="right-pane">
         <div id="stageContainer">
-          <canvas id="stageCanvas" width="480" height="360"></canvas>
+          <div id="scratchControls" class="scratch-controls">
+            <button id="greenFlagBtn" class="control-btn flag-btn" title="Start">
+              <i data-lucide="play" color="#4CAF50" stroke-width="2.5" style="width: 20px; height: 20px;"></i>
+            </button>
+            <button id="stopBtn" class="control-btn stop-btn" title="Stop">
+              <i data-lucide="square" color="#d35400" stroke-width="2.5" fill="#d35400" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+          <div id="stageCanvas" style="width:480px;height:360px;overflow:hidden;"></div>
         </div>
-        <div id="spritePanel">
-          <!-- Sprite list populated by JS -->
-        </div>
+        <div id="spritePanelContainer"></div>
       </div>
 
       <!-- RIGHT PANE: Board mode (hidden by default) -->
       <div id="boardPane" class="right-pane" style="display: none;">
-        <div class="pane-section-label">MicroPython (ESP32-Ready)</div>
-        <pre id="generatedCode"><code></code></pre>
-        <div id="uploadPanel"></div>
-        <button id="uploadBtn">Upload / Generate Code</button>
-      </div>
+
+        <!-- ── Board Stage Sub-view (toggled from header pills) ── -->
+        <div id="boardStageView" class="board-subview" style="display:none;">
+          <div id="boardStageSlot"></div>
+        </div>
+
+        <!-- ── Board Code Sub-view ── -->
+        <div id="boardCodeView" class="board-subview">
+
+          <div class="editor-header">
+            <div class="file-tab" id="codeFileTab">
+              <i data-lucide="file-code-2" style="width: 16px; height: 16px;"></i>
+              <span id="codeFileName">sketch.ino</span>
+            </div>
+            <select class="env-dropdown" id="envDropdown">
+              <option value="arduino">C++ (Arduino)</option>
+              <option value="micropython">MicroPython</option>
+            </select>
+          </div>
+
+
+
+          <!-- Code Editor Body: gutter + editable textarea -->
+          <div class="code-editor-body" id="codeEditorBody">
+            <div class="code-gutter" id="codeGutter"></div>
+            <textarea
+              class="code-content code-textarea"
+              id="codeContent"
+              spellcheck="false"
+              autocorrect="off"
+              autocapitalize="off"
+              data-gramm="false"
+            ></textarea>
+          </div>
+
+          <div class="editor-footer">
+            <button class="toolbar-btn" id="downloadCodeBtn">
+              <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+              <span id="downloadBtnLabel">Download .ino</span>
+            </button>
+            <button class="toolbar-btn" id="uploadBtn">
+              <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+              <span id="uploadBtnLabel">Upload Code</span>
+            </button>
+            <span id="uploadStatus" style="font-size: 11px; margin-left: auto; color: var(--text-muted); display: none;"></span>
+          </div>
+
+        </div><!-- /boardCodeView -->
+      </div><!-- /boardPane -->
     </div>
+
+    <!-- Hidden legacy elements (kept for compatibility) -->
+    <pre id="generatedCode" style="display:none;"><code></code></pre>
   </body>
 </html>

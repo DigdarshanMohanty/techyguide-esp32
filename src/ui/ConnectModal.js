@@ -1,4 +1,6 @@
 // web serial and web bluetooth connection modal for hardware boards
+import { refreshIcons } from './icons';
+
 let connectOverlay = null;
 let connectBtn = null;
 let currentTab = 'serial';
@@ -14,16 +16,12 @@ let authorizedPorts = [];
 let discoveredBtDevices = [];
 
 export function initConnectButton() {
-  const header = document.getElementById('appHeader');
-  if (!header) return;
-
-  connectBtn = document.createElement('button');
-  connectBtn.className = 'header-btn';
-  connectBtn.id = 'connectBtn';
-  _updateConnectBtnUI();
+  // Find the button already created by ModeSwitcher
+  connectBtn = document.getElementById('connectBtn');
+  if (!connectBtn) return;
 
   connectBtn.addEventListener('click', () => openConnectModal());
-  header.appendChild(connectBtn);
+  _updateConnectBtnUI();
 
   _createConnectModal();
 
@@ -55,38 +53,23 @@ export function closeConnectModal() {
 function _updateConnectBtnUI() {
   if (!connectBtn) return;
 
-  connectBtn.classList.remove('header-btn--connected');
+  const label = document.getElementById('connectBtnLabel');
+  connectBtn.classList.remove('is-connected', 'is-connecting');
 
   if (connectionState === 'connected') {
-    connectBtn.classList.add('header-btn--connected');
-    const label = activeSerialPort
-      ? 'USB Connected'
-      : activeBtDevice
-        ? `BT: ${activeBtDevice.name || 'Device'}`
-        : 'Connected';
-    connectBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      ${label}
-    `;
+    connectBtn.classList.add('is-connected');
+    if (label) {
+      label.textContent = activeSerialPort
+        ? 'Connected'
+        : activeBtDevice
+          ? `BT: ${activeBtDevice.name || 'Device'}`
+          : 'Connected';
+    }
   } else if (connectionState === 'connecting') {
-    connectBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin-icon">
-        <polyline points="23 4 23 10 17 10"></polyline>
-        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-      </svg>
-      Connecting…
-    `;
+    connectBtn.classList.add('is-connecting');
+    if (label) label.textContent = 'Connecting…';
   } else {
-    connectBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V3"/>
-        <path d="M9 21h6"/>
-        <path d="M12 12v9"/>
-      </svg>
-      Connect
-    `;
+    if (label) label.textContent = 'Connect';
   }
 }
 
@@ -104,7 +87,9 @@ function _createConnectModal() {
             <span class="status-dot"></span>
             <span id="connStatusText">Disconnected</span>
           </div>
-          <button class="modal-close" id="connectModalClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          <button class="modal-close" id="connectModalClose">
+            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+          </button>
         </div>
       </div>
       <div class="modal-tabs">
@@ -120,10 +105,7 @@ function _createConnectModal() {
           <div class="pagination-dot"></div>
         </div>
         <button class="refresh-btn" id="connectScanBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
+          <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
           Scan / Refresh
         </button>
       </div>

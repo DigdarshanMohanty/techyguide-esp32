@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "blockly": "^12.0.0",
+    "lucide": "^1.9.0",
     "pixi.js": "^8.17.1"
   }
 }

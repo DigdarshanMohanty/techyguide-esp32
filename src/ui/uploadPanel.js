@@ -1,5 +1,6 @@
 // esp32 upload panel — status badge, upload button, and output log
 import { uploadToESP32 } from "../upload/serialUpload";
+import { refreshIcons } from "./icons";
 
 const STATUS_LABELS = {
   idle: { text: "Ready", cls: "status-idle" },
@@ -16,45 +17,20 @@ const STATUS_LABELS = {
 let _getCode = null; 
 let _isUploading = false;
 
+import { showToast } from "./ModeSwitcher";
+
 export function initUploadPanel(getCode) {
   _getCode = getCode;
 
-  const container = document.getElementById("uploadPanel");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="upload-panel">
-      <div class="upload-header">
-        <span class="upload-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="16 16 12 12 8 16"></polyline>
-            <line x1="12" y1="12" x2="12" y2="21"></line>
-            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
-          </svg>
-          Upload to ESP32
-        </span>
-        <span id="uploadStatus" class="upload-status status-idle">Ready</span>
-      </div>
-
-      <button id="uploadBtn" class="upload-btn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="19" x2="12" y2="5"></line>
-          <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
-        Upload Code
-      </button>
-
-      <div id="uploadLog" class="upload-log">
-        <span class="log-placeholder">Output will appear here after upload…</span>
-      </div>
-
-      <div class="upload-hint">
-        Requires Chrome or Edge &nbsp;·&nbsp; Connect ESP32 via USB
-      </div>
-    </div>
-  `;
-
-  document.getElementById("uploadBtn").addEventListener("click", handleUpload);
+  const uploadBtn = document.getElementById("uploadBtn");
+  if (uploadBtn) {
+    uploadBtn.addEventListener("click", handleUpload);
+  }
+  
+  const headerUploadBtn = document.getElementById("headerUploadBtn");
+  if (headerUploadBtn) {
+    headerUploadBtn.addEventListener("click", handleUpload);
+  }
 }
 
 async function handleUpload() {
@@ -102,30 +78,37 @@ function setStatus(key) {
   if (!el) return;
   const { text, cls } = STATUS_LABELS[key] || STATUS_LABELS.idle;
   el.textContent = text;
-  el.className = "upload-status " + cls;
+  el.style.display = key === 'idle' ? 'none' : 'inline';
 }
 
 function setLog(text, cls) {
-  const el = document.getElementById("uploadLog");
-  if (!el) return;
-  if (!text) {
-    el.innerHTML = `<span class="log-placeholder">Output will appear here after upload…</span>`;
-    return;
+  if (text && cls.includes('error')) {
+    showToast(text);
+  } else if (text && cls.includes('success')) {
+    showToast("Upload Successful!");
+  } else if (text && cls.includes('warn')) {
+    showToast(text);
   }
-  el.innerHTML = `<pre class="${cls}">${escapeHtml(text)}</pre>`;
 }
 
 function setButtonState(uploading) {
   const btn = document.getElementById("uploadBtn");
-  if (!btn) return;
-  btn.disabled = uploading;
-  btn.classList.toggle("uploading", uploading);
-  btn.innerHTML = uploading
-    ? `<span class="spinner"></span> Uploading…`
-    : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="19" x2="12" y2="5"></line>
-        <polyline points="5 12 12 5 19 12"></polyline>
-       </svg> Upload Code`;
+  if (btn) {
+    btn.disabled = uploading;
+    const label = btn.querySelector('#uploadBtnLabel');
+    if (label) {
+      label.textContent = uploading ? "Uploading…" : "Upload Code";
+    }
+  }
+
+  const headerBtn = document.getElementById("headerUploadBtn");
+  if (headerBtn) {
+    headerBtn.disabled = uploading;
+    headerBtn.innerHTML = uploading 
+      ? `<i data-lucide="loader" class="spin-icon" style="width:14px;height:14px;"></i> Uploading…` 
+      : `<i data-lucide="upload" style="width:14px;height:14px;"></i> Upload`;
+    refreshIcons();
+  }
 }
 
 function escapeHtml(str) {

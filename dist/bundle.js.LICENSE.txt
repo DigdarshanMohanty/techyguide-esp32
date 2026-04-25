@@ -5,6 +5,13 @@
  */
 
 /**
+ * @license lucide v1.9.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * tiny-lru
  *
  * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>
