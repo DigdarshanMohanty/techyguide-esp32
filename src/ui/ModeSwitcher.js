@@ -48,15 +48,15 @@ export function showToast(message) {
 const BOARDS = [
   {
     id: 'i-bot',
-    name: 'i-Bot',
-    desc: 'ESP32-based robot',
-    img: 'https://cdn.sparkfun.com/assets/learn_tutorials/8/4/6/ESP32_Thing_Pinout.png',
+    name: 'i-bot',
+    desc: '',
+    img: '/board/i-bot.png',
   },
   {
     id: 't-bot',
-    name: 'T-Bot',
-    desc: 'ESP32 WROOM module',
-    img: 'https://cdn.sparkfun.com/assets/learn_tutorials/8/4/6/ESP32_Thing_Pinout.png',
+    name: 't-bot',
+    desc: '',
+    img: '/board/t-bot.png',
   },
 ];
 
@@ -72,13 +72,12 @@ export function initModeSwitcher(onModeChange, onViewChange) {
   //  LEFT SECTION — Logo
   // ══════════════════════════════════════════════════
   const leftSection = document.createElement('div');
-  leftSection.className = 'nav-section nav-section--left';
+  leftSection.className = 'flex items-center shrink-0 bg-white h-full pl-5 pr-8 shadow-[4px_0_12px_rgba(0,0,0,0.06)] relative z-10 border-r border-black/5';
 
   const logo = document.createElement('div');
-  logo.className = 'header-logo';
-  logo.setAttribute('data-tooltip', 'TechyGuide Home');
+  logo.className = 'flex items-center cursor-pointer shrink-0 hover:opacity-90 transition-opacity';
   logo.innerHTML = `
-    <img src="/logo-ByQhDDdF.webp" alt="TechyGuide">
+    <img src="/logo/logo-ByQhDDdF.webp" alt="TechyGuide" class="h-14 object-contain">
   `;
   leftSection.appendChild(logo);
 
@@ -86,86 +85,105 @@ export function initModeSwitcher(onModeChange, onViewChange) {
   //  CENTER SECTION — Board Dropdown + Connect
   // ══════════════════════════════════════════════════
   const centerSection = document.createElement('div');
-  centerSection.className = 'nav-section nav-section--center';
+  centerSection.className = 'flex items-center gap-3 shrink-0';
 
   // ── Board Dropdown ──
   const boardWrap = document.createElement('div');
-  boardWrap.className = 'board-dropdown-wrap';
+  boardWrap.className = 'relative';
 
   const boardBtn = document.createElement('button');
   boardBtn.className = 'nav-btn nav-btn--board';
   boardBtn.id = 'boardToggleBtn';
-  boardBtn.setAttribute('data-tooltip', 'Select Board');
   boardBtn.innerHTML = `
-    <i data-lucide="cpu" style="width:16px;height:16px;"></i>
     <span id="boardBtnLabel">Board</span>
-    <i class="btn-chevron" data-lucide="chevron-down" style="width:14px;height:14px;"></i>
   `;
 
+  // ── Board Selection Modal (compact popup) ──
   const boardPanel = document.createElement('div');
-  boardPanel.className = 'board-dropdown-panel';
+  boardPanel.className = 'board-modal-overlay';
   boardPanel.id = 'boardDropdownPanel';
 
-  BOARDS.forEach(board => {
+  const modalBox = document.createElement('div');
+  modalBox.className = 'board-modal-box';
+
+  // Header with title + close
+  const modalHeader = document.createElement('div');
+  modalHeader.className = 'board-modal-header';
+  modalHeader.innerHTML = `
+    <span class="board-modal-title">Select Board</span>
+    <button class="board-modal-close" id="closeBoardModalBtn">
+      <i data-lucide="x" style="width:18px;height:18px;"></i>
+    </button>
+  `;
+  modalBox.appendChild(modalHeader);
+
+  // Cards row
+  const cardsContainer = document.createElement('div');
+  cardsContainer.className = 'board-modal-cards';
+
+  BOARDS.forEach((board) => {
     const card = document.createElement('div');
-    card.className = 'board-card';
+    card.className = 'board-modal-card';
     card.dataset.boardId = board.id;
     card.innerHTML = `
-      <img class="board-card-img" src="${board.img}" alt="${board.name}">
-      <div class="board-card-name">${board.name}</div>
-      <div class="board-card-desc">${board.desc}</div>
+      <div class="board-modal-card-img">
+        <img src="${board.img}" alt="${board.name}">
+      </div>
+      <span class="board-modal-card-name">${board.name}</span>
     `;
 
     card.addEventListener('click', () => {
       selectedBoard = board.id;
 
-      // Keep label as Board
-      // const label = document.getElementById('boardBtnLabel');
-      // if (label) label.textContent = board.name;
-
-      // Update card selection
-      boardPanel.querySelectorAll('.board-card').forEach(c => c.classList.remove('is-selected'));
+      cardsContainer.querySelectorAll('.board-modal-card').forEach(c => {
+        c.classList.remove('is-selected');
+      });
       card.classList.add('is-selected');
 
-      // Close dropdown
-      boardPanel.classList.remove('is-visible');
-      boardBtn.classList.remove('is-open');
-
-      // Switch to board mode
+      // Close modal then switch mode
+      boardPanel.classList.remove('open');
       _switchMode('board');
     });
 
-    boardPanel.appendChild(card);
+    cardsContainer.appendChild(card);
   });
 
-  // Toggle dropdown
-  boardBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = boardPanel.classList.contains('is-visible');
-    boardPanel.classList.toggle('is-visible', !isOpen);
-    boardBtn.classList.toggle('is-open', !isOpen);
+  modalBox.appendChild(cardsContainer);
+  boardPanel.appendChild(modalBox);
+
+  // Close on backdrop click
+  boardPanel.addEventListener('click', (e) => {
+    if (e.target === boardPanel) boardPanel.classList.remove('open');
   });
 
-  // Close on outside click
-  document.addEventListener('click', (e) => {
-    if (!boardWrap.contains(e.target)) {
-      boardPanel.classList.remove('is-visible');
-      boardBtn.classList.remove('is-open');
+  // Close button
+  modalBox.querySelector('#closeBoardModalBtn').addEventListener('click', () => {
+    boardPanel.classList.remove('open');
+  });
+
+  // ESC key to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && boardPanel.classList.contains('open')) {
+      boardPanel.classList.remove('open');
     }
   });
 
+  // Open modal
+  boardBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    boardPanel.classList.add('open');
+    refreshIcons();
+  });
+
   boardWrap.appendChild(boardBtn);
-  boardWrap.appendChild(boardPanel);
+  document.body.appendChild(boardPanel);
 
   // ── Connect Button ──
   const connectBtn = document.createElement('button');
   connectBtn.className = 'nav-btn nav-btn--connect';
   connectBtn.id = 'connectBtn';
-  connectBtn.setAttribute('data-tooltip', 'Connect Device');
   connectBtn.innerHTML = `
-    <i data-lucide="plug" style="width:16px;height:16px;"></i>
     <span id="connectBtnLabel">Connect</span>
-    <span class="status-dot"></span>
   `;
 
   centerSection.appendChild(boardWrap);
@@ -175,20 +193,20 @@ export function initModeSwitcher(onModeChange, onViewChange) {
   //  RIGHT SECTION — View Toggle + Upload
   // ══════════════════════════════════════════════════
   const rightSection = document.createElement('div');
-  rightSection.className = 'nav-section nav-section--right';
+  rightSection.className = 'flex items-center gap-3 shrink-0';
 
-  // ── View Toggle (Scratch-style tabs) ──
+  // ── View Toggle (Professional Pill Tabs) ──
   const tabGroup = document.createElement('div');
-  tabGroup.className = 'header-tab-group';
+  tabGroup.className = 'flex items-center bg-black/15 rounded-lg p-[3px] shrink-0 h-9 border border-black/10 shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)]';
   tabGroup.id = 'headerViewGroup';
   tabGroup.innerHTML = `
-    <button class="header-tab active" id="headerStageBtn" data-view="stage">
-      <i data-lucide="monitor" style="width:15px;height:15px;"></i>
+    <button class="header-tab active flex items-center justify-center gap-1.5 px-4 h-full rounded-md border-none bg-transparent text-gray-800 text-[13px] font-semibold cursor-pointer transition-all whitespace-nowrap" id="headerStageBtn" data-view="stage">
+      <i data-lucide="monitor" class="size-3.5"></i>
       Stage
     </button>
-    <button class="header-tab" id="headerCodeBtn" data-view="code">
-      <i data-lucide="code-2" style="width:15px;height:15px;"></i>
-      Code
+    <button class="header-tab flex items-center justify-center gap-1.5 px-4 h-full rounded-md border-none bg-transparent text-gray-800 text-[13px] font-semibold cursor-pointer transition-all whitespace-nowrap" id="headerCodeBtn" data-view="code">
+      <i data-lucide="upload" class="size-3.5"></i>
+      Upload
     </button>
   `;
 
@@ -197,9 +215,8 @@ export function initModeSwitcher(onModeChange, onViewChange) {
   uploadBtn.className = 'nav-btn nav-btn--upload';
   uploadBtn.id = 'headerUploadBtn';
   uploadBtn.style.display = 'none';
-  uploadBtn.setAttribute('data-tooltip', 'Upload Code');
   uploadBtn.innerHTML = `
-    <i data-lucide="upload" style="width:15px;height:15px;"></i>
+    <i data-lucide="upload" class="size-3.5"></i>
     Upload
   `;
 
@@ -265,6 +282,13 @@ function _switchMode(newMode) {
 // ── View switching ──────────────────────────────────
 function _setView(view) {
   if (view === currentBoardView) return;
+
+  // Guard: switching to Upload requires a board to be selected
+  if (view === 'code' && !selectedBoard) {
+    showToast('Please select a board first.');
+    return;
+  }
+
   currentBoardView = view;
 
   const stageBtn = document.getElementById('headerStageBtn');

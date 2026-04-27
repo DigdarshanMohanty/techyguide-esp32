@@ -71,6 +71,7 @@ import { initSpritePanel } from "./ui/SpritePanel";
 import { initConnectButton } from "./ui/ConnectModal";
 import { refreshIcons } from "./ui/icons";
 import "./index.css";
+import "./output.css";
 
 // ── Register Block Definitions ──────────────────────
 Blockly.common.defineBlocks(printblock);
@@ -145,8 +146,6 @@ interpreter.setRenderer(renderer);
 
 (async () => {
   await renderer.init();
-
-  spriteStore.addSprite("Cat");
 
   spriteStore.on((event) => {
     renderer.setSprites(spriteStore.getAllSprites());

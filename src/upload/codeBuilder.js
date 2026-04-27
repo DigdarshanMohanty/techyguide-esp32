@@ -19,7 +19,7 @@ function hasTopLevelLoop(lines) {
 }
 
 export function buildESP32Code(rawCode) {
-  if (!rawCode || rawCode.trim() === "") return "";
+  if (!rawCode || rawCode.trim() === "") return "while True:\n    pass\n";
 
   const allLines = rawCode.split("\n");
 

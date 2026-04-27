@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@source "./";
+
+@theme {
+  --color-scratch-blue: #4C97FF;
+  --color-scratch-blue-dark: #3D8BF5;
+  --color-scratch-blue-light: rgba(76, 151, 255, 0.15);
+  --color-scratch-green: #4CAF50;
+  --color-scratch-green-dark: #43A047;
+  --color-scratch-orange: #FF8C1A;
+  --color-scratch-orange-dark: #E67E00;
+  --color-scratch-purple: #9966FF;
+  --color-scratch-purple-dark: #855CD6;
+}

@@ -127,8 +127,15 @@ export class StageRenderer {
       
       this._bgSprite.visible = true;
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
-        const tex = Texture.from(img);
+        // Draw onto a clean canvas to avoid tainted canvas / CORS WebGL errors
+        const canvas = document.createElement('canvas');
+        canvas.width = this.width;
+        canvas.height = this.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, this.width, this.height);
+        const tex = Texture.from(canvas);
         this._bgSprite.texture = tex;
         this._bgSprite.width = this.width;
         this._bgSprite.height = this.height;
@@ -245,7 +252,7 @@ export class StageRenderer {
       const scale = sprite.size / 100;
       pixiSprite.scale.set(scale);
 
-      pixiSprite.visible = sprite.visible;
+      pixiSprite.visible = sprite.visible && (sprite.id === spriteStore.selectedSpriteId);
       pixiSprite.alpha = sprite.opacity;
 
       pixiSprite.zIndex = i;
