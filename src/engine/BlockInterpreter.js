@@ -1,4 +1,5 @@
-// scratch-style block interpreter — executes block scripts as async threads
+// Block Interpreter 
+
 import eventBus, { Events } from './EventBus.js';
 
 class Thread {

@@ -99,6 +99,41 @@ const setLedBrightness = {
   tooltip: "Set LED brightness (0-1023) using PWM"
 };
 
+const detachServo = {
+  type: "esp32_detach_servo",
+  message0: "detach servo on pin %1",
+  args0: [
+    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+  ],
+  previousStatement: null,
+  nextStatement: null,
+  colour: 30,
+  tooltip: "Stop and release the servo motor PWM signal"
+};
+
+const relayToggle = {
+  type: "esp32_relay_toggle",
+  message0: "toggle relay at pin %1",
+  args0: [
+    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+  ],
+  previousStatement: null,
+  nextStatement: null,
+  colour: 30,
+  tooltip: "Toggle the relay between ON and OFF"
+};
+
+const relayState = {
+  type: "esp32_relay_state",
+  message0: "relay state at pin %1",
+  args0: [
+    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+  ],
+  output: "Boolean",
+  colour: 30,
+  tooltip: "Get the current state of a relay (true = ON)"
+};
+
 const pinStateMonitor = {
   type: "esp32_pin_state_monitor",
   message0: "enable pin state monitor",
@@ -108,7 +143,23 @@ const pinStateMonitor = {
   tooltip: "Enable the pin state monitor module"
 };
 
+const rotateServo = {
+  type: "esp32_rotate_servo",
+  message0: "rotate servo on pin %1 from %2 to %3 speed %4",
+  args0: [
+    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "field_number", name: "FROM", value: 0, min: 0, max: 180 },
+    { type: "field_number", name: "TO", value: 180, min: 0, max: 180 },
+    { type: "field_dropdown", name: "SPEED", options: [["slow","30"],["medium","15"],["fast","5"]] }
+  ],
+  previousStatement: null,
+  nextStatement: null,
+  colour: 30,
+  tooltip: "Smoothly rotate the servo from one angle to another"
+};
+
 export const actuatorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
-  enableServo, setServoAngle, freeMotor, enableMotor,
-  setRelay, enableLedControl, setLedBrightness, pinStateMonitor
+  enableServo, setServoAngle, rotateServo, detachServo, freeMotor, enableMotor,
+  setRelay, relayToggle, relayState,
+  enableLedControl, setLedBrightness, pinStateMonitor
 ]);

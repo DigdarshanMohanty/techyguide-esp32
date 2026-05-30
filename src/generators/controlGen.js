@@ -4,6 +4,11 @@ import { Order } from "blockly/python";
 
 export const forBlock = Object.create(null);
 
+// Blockly's Python generator uses 2-space indent by default.
+// All inner code from statementToCode() is already indented with 2 spaces.
+// We must match that for any manually appended lines.
+const I = "  "; // matches Blockly's default INDENT
+
 // ── wait N seconds ──────────────────────────────────
 forBlock["wait_seconds"] = function (block, generator) {
   const duration =
@@ -16,22 +21,22 @@ forBlock["wait_seconds"] = function (block, generator) {
 forBlock["repeat_block"] = function (block, generator) {
   const times =
     generator.valueToCode(block, "TIMES", Order.NONE) || "10";
-  const branch = generator.statementToCode(block, "SUBSTACK") || "    pass\n";
+  const branch = generator.statementToCode(block, "SUBSTACK") || `${I}pass\n`;
   return `for _i in range(int(${times})):\n${branch}`;
 };
 
 // ── forever ─────────────────────────────────────────
 forBlock["forever_block"] = function (block, generator) {
-  const branch = generator.statementToCode(block, "SUBSTACK") || "    pass\n";
+  const branch = generator.statementToCode(block, "SUBSTACK") || `${I}pass\n`;
   generator.definitions_["import_time"] = "import time";
-  return `while True:\n${branch}`;
+  return `while True:\n${branch}${I}time.sleep_ms(50)\n`;
 };
 
 // ── if ... then ─────────────────────────────────────
 forBlock["if_block"] = function (block, generator) {
   const condition =
     generator.valueToCode(block, "CONDITION", Order.NONE) || "False";
-  const branch = generator.statementToCode(block, "SUBSTACK") || "    pass\n";
+  const branch = generator.statementToCode(block, "SUBSTACK") || `${I}pass\n`;
   return `if ${condition}:\n${branch}`;
 };
 
@@ -39,9 +44,9 @@ forBlock["if_block"] = function (block, generator) {
 forBlock["if_else_block"] = function (block, generator) {
   const condition =
     generator.valueToCode(block, "CONDITION", Order.NONE) || "False";
-  const ifBranch = generator.statementToCode(block, "SUBSTACK") || "    pass\n";
+  const ifBranch = generator.statementToCode(block, "SUBSTACK") || `${I}pass\n`;
   const elseBranch =
-    generator.statementToCode(block, "SUBSTACK2") || "    pass\n";
+    generator.statementToCode(block, "SUBSTACK2") || `${I}pass\n`;
   return `if ${condition}:\n${ifBranch}else:\n${elseBranch}`;
 };
 
@@ -50,14 +55,14 @@ forBlock["wait_until"] = function (block, generator) {
   const condition =
     generator.valueToCode(block, "CONDITION", Order.NONE) || "False";
   generator.definitions_["import_time"] = "import time";
-  return `while not (${condition}):\n    time.sleep(0.05)\n`;
+  return `while not (${condition}):\n${I}time.sleep(0.05)\n`;
 };
 
 // ── repeat until ────────────────────────────────────
 forBlock["repeat_until"] = function (block, generator) {
   const condition =
     generator.valueToCode(block, "CONDITION", Order.NONE) || "False";
-  const branch = generator.statementToCode(block, "SUBSTACK") || "    pass\n";
+  const branch = generator.statementToCode(block, "SUBSTACK") || `${I}pass\n`;
   return `while not (${condition}):\n${branch}`;
 };
 
@@ -70,7 +75,7 @@ forBlock["count_loop"] = function (block, generator) {
     generator.valueToCode(block, "TO", Order.NONE) || "10";
   const step_val =
     generator.valueToCode(block, "STEP", Order.NONE) || "1";
-  const branch = generator.statementToCode(block, "SUBSTACK") || "    pass\n";
+  const branch = generator.statementToCode(block, "SUBSTACK") || `${I}pass\n`;
   return `for ${varName} in range(int(${from_val}), int(${to_val}) + 1, int(${step_val})):\n${branch}`;
 };
 
@@ -86,7 +91,7 @@ forBlock["stop_all"] = function (block, generator) {
 // ── create clone / when clone starts / delete clone ─
 // These are Scratch-only concepts; emit pass in MicroPython
 forBlock["create_clone"] = function () {
-  return "pass  # clone not supported on hardware\n";
+  return "";
 };
 
 forBlock["when_clone_starts"] = function () {
@@ -94,5 +99,5 @@ forBlock["when_clone_starts"] = function () {
 };
 
 forBlock["delete_clone"] = function () {
-  return "pass  # clone not supported on hardware\n";
+  return "";
 };

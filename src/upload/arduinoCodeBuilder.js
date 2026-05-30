@@ -17,10 +17,7 @@ export function buildArduinoSketch(workspace) {
 
   for (const block of topBlocks) {
     if (block.type === 'esp32_when_starts') {
-      // Generate inner setup code from the DO/STACK connection
-      const inner = arduinoGenerator.statementToCode(block, 'DO')
-        || arduinoGenerator.statementToCode(block, 'SUBSTACK')
-        || '';
+      const inner = arduinoGenerator.statementToCode(block, 'DO') || '';
       if (inner.trim()) setupLines.push(inner.trimEnd());
     } else {
       const code = arduinoGenerator.blockToCode(block);
@@ -30,39 +27,53 @@ export function buildArduinoSketch(workspace) {
     }
   }
 
-  // Collect definitions (includes, global declarations)
+  // Collect definitions: includes, pin-setup (→ setup), functions, globals
   const includes = [];
-  const globals = [];
+  const pinSetupDefs = [];  // e.g. pinMode() — goes inside setup()
+  const funcDefs = [];      // function declarations
+  const globals = [];       // variable declarations
   for (const val of Object.values(arduinoGenerator.definitions_)) {
     const first = val.split('\n')[0].trim();
     if (first.startsWith('#include') || first.startsWith('#define')) {
       if (!includes.includes(val)) includes.push(val);
+    } else if (first.startsWith('pinMode')) {
+      pinSetupDefs.push(val);
+    } else if (/^(void|int|float|long|bool|String)\s+\w+\s*\(/.test(first)) {
+      funcDefs.push(val);
     } else {
       globals.push(val);
     }
   }
 
-  const indent = (code) =>
+  const indentCode = (code) =>
     code
       .split('\n')
       .map((l) => (l.trim() ? '  ' + l : ''))
       .join('\n');
 
-  const setupBody =
-    setupLines.length > 0
-      ? setupLines.map(indent).join('\n')
-      : '';
+  // Auto-inject Serial.begin if any code uses Serial
+  const allCode = setupLines.join('\n') + loopLines.join('\n');
+  const needsSerial = allCode.includes('Serial.print') || allCode.includes('Serial.read');
+
+  // Combine setup: Serial.begin + pin setup defs + user setup blocks
+  const fullSetup = [];
+  if (needsSerial) fullSetup.push('  Serial.begin(115200);');
+  for (const pd of pinSetupDefs) fullSetup.push(indentCode(pd));
+  for (const sl of setupLines) fullSetup.push(indentCode(sl));
+
+  const setupBody = fullSetup.length > 0 ? fullSetup.join('\n') : '';
 
   const loopBody =
     loopLines.length > 0
-      ? loopLines.map(indent).join('\n')
+      ? loopLines.map(indentCode).join('\n')
       : '';
 
   const parts = [
     ...includes,
     '',
     ...globals,
-    globals.length ? '' : null,
+    ...funcDefs,
+    (globals.length || funcDefs.length) ? '' : null,
     'void setup() {',
     setupBody || null,
     '}',

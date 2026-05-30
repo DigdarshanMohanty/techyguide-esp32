@@ -1,7 +1,7 @@
-// uploads micropython to esp32 via web serial raw repl protocol
-// Reuses the already-connected port from ConnectModal when available
-import { buildESP32Code } from "./codeBuilder";
+// uploads micropython to esp32 via web serial
+// Uses raw REPL protocol then cleanly releases port for serial monitor
 import { getActivePort, getConnectionState } from "../ui/ConnectModal";
+import { pauseSerialMonitor } from "../ui/SerialMonitor";
 
 const BAUD_RATE = 115200;
 
@@ -9,47 +9,11 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-async function readFor(reader, timeoutMs) {
-  let result = "";
-  const deadline = Date.now() + timeoutMs;
-
-  while (Date.now() < deadline) {
-    const remaining = Math.max(10, deadline - Date.now());
-
-    let timedOut = false;
-    const timer = new Promise((res) =>
-      setTimeout(() => { timedOut = true; res(null); }, remaining)
-    );
-
-    const readPromise = reader.read();
-    const winner = await Promise.race([readPromise, timer]);
-
-    if (winner === null) {
-      await reader.cancel().catch(() => {});
-      break;
-    }
-
-    const { value, done } = winner;
-    if (done || !value) break;
-    result += dec.decode(value);
-  }
-
-  return result;
-}
-
 /**
  * Upload MicroPython code to ESP32 via Web Serial Raw REPL.
  *
- * Strategy:
- * 1. If a port is already connected via ConnectModal, reuse it (no prompt).
- * 2. If not connected, request a port via the browser picker.
- *
- * Raw REPL protocol:
- *   Ctrl+C  → interrupt running program
- *   Ctrl+A  → enter raw REPL mode
- *   <code>  → send the MicroPython source
- *   Ctrl+D  → execute the sent code
- *   Ctrl+B  → exit raw REPL back to normal REPL
+ * Pauses the serial monitor before upload to release its reader,
+ * then resumes it after upload completes so the user sees streaming output.
  */
 export async function uploadToESP32(code, onStatus = () => {}) {
   if (!("serial" in navigator)) {
@@ -67,30 +31,43 @@ export async function uploadToESP32(code, onStatus = () => {}) {
   }
 
   let port = null;
-  let ownedPort = false; // true if we opened the port ourselves
+  let ownedPort = false;
   let writer = null;
   let reader = null;
+  let resumeMonitor = null;
 
-  const cleanup = async () => {
-    try { if (reader) { await reader.cancel().catch(() => {}); reader.releaseLock(); } } catch (_) {}
-    try { if (writer) { writer.releaseLock(); } } catch (_) {}
-    // Only close the port if we opened it, not if it came from ConnectModal
-    if (ownedPort) {
-      try { if (port) { await port.close(); } } catch (_) {}
+  // Cancel any pending reads, then release all locks.
+  const releaseLocks = async () => {
+    if (reader) {
+      try { await reader.cancel(); } catch (_) {}
+      try { reader.releaseLock(); } catch (_) {}
+      reader = null;
+    }
+    if (writer) {
+      try { writer.releaseLock(); } catch (_) {}
+      writer = null;
     }
   };
 
   try {
+    // ── 0. Pause the serial monitor (releases its reader) ──
+    resumeMonitor = await pauseSerialMonitor();
+
     // ── 1. Get port ──────────────────────────────────
     const existingPort = getActivePort();
     if (existingPort && getConnectionState() === 'connected') {
-      // Reuse the already-connected port — no browser prompt needed
       port = existingPort;
       ownedPort = false;
       onStatus("connecting");
+
+      // If the readable stream was consumed (canceled by monitor pause), reopen
+      if (!port.readable) {
+        try { await port.close(); } catch (_) {}
+        await delay(300);
+        await port.open({ baudRate: BAUD_RATE });
+      }
       await delay(100);
     } else {
-      // No port connected; request one via browser picker
       onStatus("waiting_port");
       port = await navigator.serial.requestPort();
       ownedPort = true;
@@ -99,51 +76,71 @@ export async function uploadToESP32(code, onStatus = () => {}) {
       await delay(300);
     }
 
+    // ── 1b. Acquire reader/writer ────────────────────
     writer = port.writable.getWriter();
     reader = port.readable.getReader();
 
     const send = (text) => writer.write(enc.encode(text));
 
+    // Read with timeout — collects data until deadline
+    const readFor = async (timeoutMs) => {
+      let result = "";
+      const deadline = Date.now() + timeoutMs;
+
+      while (Date.now() < deadline) {
+        const remaining = Math.max(10, deadline - Date.now());
+        const timer = new Promise(r => setTimeout(() => r('TIMEOUT'), remaining));
+        const readP = reader.read();
+        const winner = await Promise.race([readP, timer]);
+
+        if (winner === 'TIMEOUT') break;
+        const { value, done } = winner;
+        if (done) break;
+        if (value) result += dec.decode(value);
+      }
+      return result;
+    };
+
     // ── 2. Interrupt any running program ─────────────
     onStatus("interrupting");
-    await send("\x03");        // Ctrl+C
+    await send("\x03");          // Ctrl+C
     await delay(200);
-    await send("\x03");        // Ctrl+C again
+    await send("\x03");          // Ctrl+C again
     await delay(300);
-    await readFor(reader, 400); // drain any output
+    await readFor(400);          // drain any output
 
     // ── 3. Enter Raw REPL ────────────────────────────
     onStatus("entering_repl");
-    await send("\x01");        // Ctrl+A = enter raw REPL
+    await send("\x01");          // Ctrl+A = enter raw REPL
     await delay(300);
-    let greeting = await readFor(reader, 600);
+    let greeting = await readFor(600);
 
     if (!greeting.includes("raw REPL")) {
-      // Soft reset and retry
-      await send("\x04");      // Ctrl+D = soft reset
-      await delay(1200);
-      await send("\x01");      // Ctrl+A again
+      // Soft-reset and retry
+      await send("\x04");        // Ctrl+D = soft reset
+      await delay(1500);
+      await send("\x03");        // Ctrl+C to stop boot code
+      await delay(200);
+      await send("\x01");        // Ctrl+A
       await delay(300);
-      greeting = await readFor(reader, 600);
+      greeting = await readFor(600);
     }
 
     // ── 4. Send code ─────────────────────────────────
     onStatus("uploading");
-    const finalCode = buildESP32Code(code);
 
-    // Send in chunks (some serial bridges have buffer limits)
     const CHUNK_SIZE = 256;
-    for (let i = 0; i < finalCode.length; i += CHUNK_SIZE) {
-      await send(finalCode.slice(i, i + CHUNK_SIZE));
+    for (let i = 0; i < code.length; i += CHUNK_SIZE) {
+      await send(code.slice(i, i + CHUNK_SIZE));
       await delay(20);
     }
 
     await delay(100);
-    await send("\x04");        // Ctrl+D = execute
+    await send("\x04");          // Ctrl+D = compile & execute
 
-    // ── 5. Read output ───────────────────────────────
+    // ── 5. Read initial response (OK marker + any immediate errors) ──
     onStatus("reading_output");
-    const response = await readFor(reader, 5000);
+    const response = await readFor(2000);
 
     let stdout = "";
     let stderr = "";
@@ -152,22 +149,56 @@ export async function uploadToESP32(code, onStatus = () => {}) {
       stdout = match[1].trim();
       stderr = match[2].trim();
     } else {
-      stdout = response.trim();
+      // No OK..^D..^D framing found — could mean the code has a while-loop
+      // that's running and the framing markers haven't arrived yet.
+      // Check if we at least got "OK" (code accepted and running).
+      if (response.includes("OK")) {
+        stdout = response.replace("OK", "").trim();
+        stderr = "";
+      } else {
+        stdout = response.trim();
+      }
     }
 
-    // ── 6. Exit raw REPL ─────────────────────────────
-    await send("\x02");        // Ctrl+B = exit raw REPL
-    await delay(200);
+    // ── 6. DO NOT exit raw REPL if code is still running ──
+    // If the code contains a while-loop, sending Ctrl+B would kill execution.
+    // Instead, just release locks and let serial monitor pick up streaming output.
+    // The user's code (e.g. while True: print(sensor)) will keep printing.
 
-    await cleanup();
+    // Only exit raw REPL if there was an error (code isn't running)
+    if (stderr.length > 0) {
+      await send("\x02");        // Ctrl+B = exit raw REPL
+      await delay(200);
+    }
+
+    // ── 7. Release locks ─────────────────────────────
+    await releaseLocks();
+
+    // ── 8. Wait for ESP32 to start outputting, then resume monitor ──
+    await delay(500);
+
+    if (resumeMonitor) {
+      resumeMonitor();
+      resumeMonitor = null;
+    }
 
     if (stderr.length > 0) {
       return { success: false, output: stderr };
     }
-    return { success: true, output: stdout || "✓ Code uploaded and running on ESP32!" };
+    return {
+      success: true,
+      output: stdout || "Code uploaded and executing on ESP32!"
+    };
 
   } catch (err) {
-    await cleanup();
+    await releaseLocks();
+    if (ownedPort && port) {
+      try { await port.close(); } catch (_) {}
+    }
+    // Try to resume monitor even on error
+    if (resumeMonitor) {
+      try { resumeMonitor(); } catch (_) {}
+    }
     throw err;
   }
 }

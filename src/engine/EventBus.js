@@ -1,4 +1,4 @@
-// pub/sub event bus for runtime communication between engine components
+// EventBus
 class EventBus {
   constructor() {
     this._handlers = {};

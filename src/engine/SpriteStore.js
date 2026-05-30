@@ -1,4 +1,5 @@
-// central state store for all sprites and backdrop management
+// Sprite Store
+
 import { Sprite } from './SpriteEngine.js';
 
 class SpriteStore {

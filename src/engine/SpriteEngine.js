@@ -1,4 +1,5 @@
-// sprite data model — position, costumes, pen state, and movement logic
+// Sprite Engine
+
 let nextSpriteId = 1;
 
 const SCRATCH_CAT_SVG = `data:image/svg+xml,${encodeURIComponent(`

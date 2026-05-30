@@ -215,7 +215,18 @@ async function _connectSerialPort(port) {
   _renderBody();
 
   try {
-    await port.open({ baudRate: 115200 });
+    // If the port is already open (readable stream exists), skip re-opening
+    if (!port.readable) {
+      try {
+        await port.open({ baudRate: 115200 });
+      } catch (firstErr) {
+        // Port may still be releasing — wait and retry once
+        console.warn('[Serial] First open attempt failed, retrying...', firstErr.message);
+        await new Promise(r => setTimeout(r, 500));
+        await port.open({ baudRate: 115200 });
+      }
+    }
+
     activeSerialPort = port;
     _setState('connected');
 
@@ -229,7 +240,7 @@ async function _connectSerialPort(port) {
     console.error('[Serial] Connection failed:', err);
     activeSerialPort = null;
     _setState('disconnected');
-    alert(`Connection failed: ${err.message}`);
+    alert(`Connection failed: ${err.message}\n\nTroubleshooting:\n• Close Arduino IDE or any other serial monitor\n• Unplug and replug the USB cable\n• Press the EN/Reset button on the ESP32`);
   }
 
   _renderBody();
@@ -238,8 +249,11 @@ async function _connectSerialPort(port) {
 async function _disconnectSerial() {
   if (activeSerialPort) {
     try {
+      // Just close the port — this automatically cancels any active readers/writers.
+      // Do NOT call getReader()/getWriter() here; another module (SerialMonitor)
+      // may already hold the lock and we'd get a "stream locked" error.
       await activeSerialPort.close();
-    } catch (e) {  }
+    } catch (e) { /* port may already be closed */ }
     activeSerialPort = null;
   }
   _setState('disconnected');
@@ -286,13 +300,14 @@ function _renderSerialPorts(body) {
         const isActive = activeSerialPort === port && connectionState === 'connected';
         const isConnecting = activeSerialPort === port && connectionState === 'connecting';
         const label = _getPortLabel(port);
-        const btnClass = isActive ? 'port-connect-btn port-connect-btn--connected' : 'port-connect-btn';
-        const btnText = isActive ? 'Connected' : isConnecting ? 'Connecting…' : 'Connect';
+        const btnClass = isActive ? 'port-connect-btn port-connect-btn--disconnect' : 'port-connect-btn';
+        const btnText = isActive ? 'Disconnect' : isConnecting ? 'Connecting…' : 'Connect';
+        const action = isActive ? 'disconnect-serial' : 'connect-serial';
 
         return `
           <div class="port-item" data-port-index="${i}">
             <span>${label}</span>
-            <button class="${btnClass}" data-action="connect-serial" data-port-idx="${i}" ${isActive ? 'disabled' : ''}>
+            <button class="${btnClass}" data-action="${action}" data-port-idx="${i}">
               ${btnText}
             </button>
           </div>
@@ -306,6 +321,13 @@ function _renderSerialPorts(body) {
       const idx = parseInt(btn.dataset.portIdx);
       const port = authorizedPorts[idx];
       if (port) await _connectSerialPort(port);
+    });
+  });
+
+  body.querySelectorAll('[data-action="disconnect-serial"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await _disconnectSerial();
+      _renderBody();
     });
   });
 }
@@ -407,13 +429,14 @@ function _renderBluetoothDevices(body) {
         const isActive = activeBtDevice === device && connectionState === 'connected';
         const isConnecting = activeBtDevice === device && connectionState === 'connecting';
         const name = device.name || `Device (${device.id.slice(0, 8)}…)`;
-        const btnClass = isActive ? 'port-connect-btn port-connect-btn--connected' : 'port-connect-btn';
-        const btnText = isActive ? 'Connected' : isConnecting ? 'Connecting…' : 'Connect';
+        const btnClass = isActive ? 'port-connect-btn port-connect-btn--disconnect' : 'port-connect-btn';
+        const btnText = isActive ? 'Disconnect' : isConnecting ? 'Connecting…' : 'Connect';
+        const action = isActive ? 'disconnect-bt' : 'connect-bt';
 
         return `
           <div class="port-item" data-bt-index="${i}">
             <span>${name}</span>
-            <button class="${btnClass}" data-action="connect-bt" data-bt-idx="${i}" ${isActive ? 'disabled' : ''}>
+            <button class="${btnClass}" data-action="${action}" data-bt-idx="${i}">
               ${btnText}
             </button>
           </div>
@@ -427,6 +450,13 @@ function _renderBluetoothDevices(body) {
       const idx = parseInt(btn.dataset.btIdx);
       const device = discoveredBtDevices[idx];
       if (device) await _connectBtDevice(device);
+    });
+  });
+
+  body.querySelectorAll('[data-action="disconnect-bt"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await _disconnectBt();
+      _renderBody();
     });
   });
 }

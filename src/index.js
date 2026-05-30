@@ -21,6 +21,10 @@ import { cameraBlocks } from "./blocks/esp32/cameraBlocks";
 import { iotBlocks } from "./blocks/esp32/iotBlocks";
 import { dabbleBlocks } from "./blocks/esp32/dabbleBlocks";
 import { esp32CoreBlocks } from "./blocks/esp32/esp32CoreBlocks";
+import { mpuBlocks } from "./blocks/esp32/mpuBlocks";
+import { heartBlocks } from "./blocks/esp32/heartBlocks";
+import { lcdBlocks } from "./blocks/esp32/lcdBlocks";
+import { l298nBlocks } from "./blocks/esp32/l298nBlocks";
 
 // MicroPython generators (existing)
 import { forBlock as actuatorGen } from "./generators/esp32/actuatorGen";
@@ -33,7 +37,15 @@ import { forBlock as cameraGen } from "./generators/esp32/cameraGen";
 import { forBlock as iotGen } from "./generators/esp32/iotGen";
 import { forBlock as dabbleGen } from "./generators/esp32/dabbleGen";
 import { forBlock as esp32CoreGen } from "./generators/esp32/esp32CoreGen";
+import { forBlock as mpuGen } from "./generators/esp32/mpuGen";
+import { forBlock as heartGen } from "./generators/esp32/heartGen";
+import { forBlock as lcdGen } from "./generators/esp32/lcdGen";
+import { forBlock as l298nGen } from "./generators/esp32/l298nGen";
 import { pythonGenerator } from "blockly/python";
+
+// Fallback generators + validation (crash-proof system)
+import { forBlock as fallbackGen, arduinoForBlock as arduinoFallbackGen } from "./generators/fallbackGen";
+import { fullValidation, installSafetyNet, reportGeneratorCoverage } from "./generators/validateWorkspace";
 
 // Arduino C++ generators (new)
 import { arduinoGenerator } from "./generators/arduinoGenerator";
@@ -63,12 +75,13 @@ import spriteStore from "./engine/SpriteStore";
 import { toolbox as espToolbox } from "./toolbox";
 import { addCustomToolbar } from "./ui/customToolbar";
 
-import { initUploadPanel } from "./ui/uploadPanel";
+import { initUploadPanel, updateUploadButtonForLanguage } from "./ui/uploadPanel";
 import { buildESP32Code } from "./upload/codeBuilder";
 import { buildArduinoSketch, emptyArduinoSketch } from "./upload/arduinoCodeBuilder";
 import { initModeSwitcher, getCurrentMode } from "./ui/ModeSwitcher";
 import { initSpritePanel } from "./ui/SpritePanel";
 import { initConnectButton } from "./ui/ConnectModal";
+import { initSerialMonitor } from "./ui/SerialMonitor";
 import { refreshIcons } from "./ui/icons";
 import "./index.css";
 import "./output.css";
@@ -89,6 +102,10 @@ Blockly.common.defineBlocks(cameraBlocks);
 Blockly.common.defineBlocks(iotBlocks);
 Blockly.common.defineBlocks(dabbleBlocks);
 Blockly.common.defineBlocks(esp32CoreBlocks);
+Blockly.common.defineBlocks(mpuBlocks);
+Blockly.common.defineBlocks(heartBlocks);
+Blockly.common.defineBlocks(lcdBlocks);
+Blockly.common.defineBlocks(l298nBlocks);
 
 // MicroPython generator registrations
 Object.assign(pythonGenerator.forBlock, printGen);
@@ -107,6 +124,10 @@ Object.assign(pythonGenerator.forBlock, cameraGen);
 Object.assign(pythonGenerator.forBlock, iotGen);
 Object.assign(pythonGenerator.forBlock, dabbleGen);
 Object.assign(pythonGenerator.forBlock, esp32CoreGen);
+Object.assign(pythonGenerator.forBlock, mpuGen);
+Object.assign(pythonGenerator.forBlock, heartGen);
+Object.assign(pythonGenerator.forBlock, lcdGen);
+Object.assign(pythonGenerator.forBlock, l298nGen);
 
 // Arduino C++ generator registrations
 Object.assign(arduinoGenerator.forBlock, arduinoControlGen);
@@ -120,6 +141,46 @@ Object.assign(arduinoGenerator.forBlock, arduinoNotificationGen);
 Object.assign(arduinoGenerator.forBlock, arduinoCameraGen);
 Object.assign(arduinoGenerator.forBlock, arduinoIotGen);
 Object.assign(arduinoGenerator.forBlock, arduinoDabbleGen);
+
+// Arduino generators for General blocks (shared between Scratch and ESP32 toolboxes)
+arduinoGenerator.forBlock['print_block'] = function (block, generator) {
+  const text = generator.valueToCode(block, 'TEXT', 99) || '""';
+  return `Serial.println(${text});\n`;
+};
+arduinoGenerator.forBlock['add_text'] = function (block, generator) {
+  const text = generator.valueToCode(block, 'TEXT', 99) || '""';
+  return `Serial.print(${text});\n`;
+};
+arduinoGenerator.forBlock['wait_block'] = function (block) {
+  const time = block.getFieldValue('TIME') || '1';
+  return `delay((long)(${time} * 1000));\n`;
+};
+arduinoGenerator.forBlock['digital_write'] = function (block) {
+  const pin = block.getFieldValue('PIN');
+  const state = block.getFieldValue('STATE') === '1' ? 'HIGH' : 'LOW';
+  return `pinMode(${pin}, OUTPUT);\ndigitalWrite(${pin}, ${state});\n`;
+};
+
+// ── Fallback generators (Scratch-only blocks → safe no-ops) ──
+// Registered CONDITIONALLY: never overwrites a real generator
+for (const [type, fn] of Object.entries(fallbackGen)) {
+  if (!pythonGenerator.forBlock[type]) {
+    pythonGenerator.forBlock[type] = fn;
+  }
+}
+for (const [type, fn] of Object.entries(arduinoFallbackGen)) {
+  if (!arduinoGenerator.forBlock[type]) {
+    arduinoGenerator.forBlock[type] = fn;
+  }
+}
+
+// ── Safety nets: prevent crashes from ANY future unmapped block ──
+installSafetyNet(pythonGenerator, "Python");
+installSafetyNet(arduinoGenerator, "Arduino");
+
+// Expose diagnostic to browser console: reportGeneratorCoverage(pythonGenerator)
+window._reportPyCoverage = () => reportGeneratorCoverage(pythonGenerator);
+window._reportArdCoverage = () => reportGeneratorCoverage(arduinoGenerator);
 
 Blockly.common.defineBlocks(motionBlocks);
 Blockly.common.defineBlocks(looksBlocks);
@@ -136,6 +197,27 @@ const ws = Blockly.inject(blocklyDiv, {
 });
 
 addCustomToolbar();
+
+// ── Pane Toggle logic ───────────────────────────────
+const togglePaneBtn = document.getElementById("togglePaneBtn");
+if (togglePaneBtn) {
+  togglePaneBtn.addEventListener("click", () => {
+    togglePaneBtn.classList.toggle("is-collapsed");
+    
+    const scratchPane = document.getElementById("scratchPane");
+    const boardPane = document.getElementById("boardPane");
+    
+    if (scratchPane) scratchPane.classList.toggle("is-hidden");
+    if (boardPane) boardPane.classList.toggle("is-hidden");
+
+    // Trigger Blockly resize smoothly alongside the CSS transition
+    let start = performance.now();
+    requestAnimationFrame(function animate(time) {
+      Blockly.svgResize(ws);
+      if (time - start < 350) requestAnimationFrame(animate);
+    });
+  });
+}
 
 
 // ── Stage Renderer + Interpreter ────────────────────
@@ -254,7 +336,10 @@ const codeFileNameEl = document.getElementById("codeFileName");
 const downloadBtnLabel = document.getElementById("downloadBtnLabel");
 
 // Provide the code from textarea to the upload panel
-initUploadPanel(() => codeTextarea?.value || '');
+initUploadPanel(
+  () => codeTextarea?.value || '',
+  () => currentCodeLang
+);
 
 // ── Stage / Code View Toggle (driven by header pills) ──
 const boardStageView = document.getElementById("boardStageView");
@@ -301,6 +386,7 @@ function setCodeLanguage(lang) {
     if (downloadBtnLabel) downloadBtnLabel.textContent = 'Download .py';
   }
 
+  updateUploadButtonForLanguage(lang);
   regenerateCode();
 }
 
@@ -309,6 +395,16 @@ envDropdown?.addEventListener('change', (e) => setCodeLanguage(e.target.value));
 // ── Code Generation ─────────────────────────────────
 
 function generateCurrentCode() {
+  // Pre-flight validation: pin conflicts, orphans, coverage (never blocks execution)
+  const gen = currentCodeLang === 'arduino' ? arduinoGenerator : pythonGenerator;
+  const report = fullValidation(ws, gen);
+  if (report.errors.length) {
+    console.error('[codegen] Errors:', report.errors);
+  }
+  if (report.warnings.length) {
+    console.warn('[codegen] Warnings:', report.warnings);
+  }
+
   if (currentCodeLang === 'arduino') {
     return buildArduinoSketch(ws);
   } else {
@@ -388,4 +484,8 @@ if (downloadCodeBtn) {
 }
 
 // Initial icon render
+refreshIcons();
+
+// Initialize serial monitor
+initSerialMonitor();
 refreshIcons();

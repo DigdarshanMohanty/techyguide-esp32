@@ -1,6 +1,7 @@
 // esp32 core blocks — pin mode, digital/analog read/write, delay
 import * as Blockly from "blockly/core";
 
+//User Choice of PINS
 const PIN_OPTIONS = [
   ["2","2"],["4","4"],["5","5"],["12","12"],["13","13"],
   ["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],
@@ -19,8 +20,8 @@ const TOUCH_PIN_OPTIONS = [
 
 const whenEsp32StartsUp = {
   type: "esp32_when_starts",
-  message0: "when ESP32 starts up",
-  nextStatement: null,
+  message0: "when ESP32 starts up %1",
+  args0: [{ type: "input_statement", name: "DO" }],
   colour: 210,
   tooltip: "Run code when the ESP32 boots up"
 };
@@ -109,7 +110,18 @@ const mapValue = {
   tooltip: "Re-map a value from one range to another"
 };
 
+const hallMagnetDetected = {
+  type: "esp32_hall_magnet_detected",
+  message0: "magnet detected? (threshold %1)",
+  args0: [
+    { type: "field_number", name: "THRESHOLD", value: 100, min: 10, max: 500 }
+  ],
+  output: "Boolean",
+  colour: 210,
+  tooltip: "Returns true if a magnet is near the ESP32 (built-in hall sensor)"
+};
+
 export const esp32CoreBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
   whenEsp32StartsUp, readDigitalPin, readAnalogPin, setDigitalPin,
-  setPwmPin, getTouchPin, getHallSensor, getBtMacAddress, mapValue
+  setPwmPin, getTouchPin, getHallSensor, hallMagnetDetected, getBtMacAddress, mapValue
 ]);

@@ -1,4 +1,4 @@
-// pixi.js renderer — syncs sprite data model to a 480x360 visual stage
+// Stage Renderer
 import { Application, Sprite as PixiSprite, Graphics, Text, TextStyle, Container, Texture, Assets } from 'pixi.js';
 import spriteStore from './SpriteStore.js';
 

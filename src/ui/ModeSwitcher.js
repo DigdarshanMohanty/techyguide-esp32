@@ -85,7 +85,7 @@ export function initModeSwitcher(onModeChange, onViewChange) {
   //  CENTER SECTION — Board Dropdown + Connect
   // ══════════════════════════════════════════════════
   const centerSection = document.createElement('div');
-  centerSection.className = 'flex items-center gap-3 shrink-0';
+  centerSection.className = 'flex items-center justify-center gap-3 flex-1';
 
   // ── Board Dropdown ──
   const boardWrap = document.createElement('div');
@@ -210,18 +210,7 @@ export function initModeSwitcher(onModeChange, onViewChange) {
     </button>
   `;
 
-  // ── Upload Button ──
-  const uploadBtn = document.createElement('button');
-  uploadBtn.className = 'nav-btn nav-btn--upload';
-  uploadBtn.id = 'headerUploadBtn';
-  uploadBtn.style.display = 'none';
-  uploadBtn.innerHTML = `
-    <i data-lucide="upload" class="size-3.5"></i>
-    Upload
-  `;
-
   rightSection.appendChild(tabGroup);
-  rightSection.appendChild(uploadBtn);
 
   // ══════════════════════════════════════════════════
   //  ASSEMBLE
@@ -247,9 +236,6 @@ function _switchMode(newMode) {
   const scratchPane = document.getElementById('scratchPane');
   const boardPane = document.getElementById('boardPane');
   const scratchControls = document.getElementById('scratchControls');
-  const viewGroup = document.getElementById('headerViewGroup');
-  const uploadBtn = document.getElementById('headerUploadBtn');
-  const boardBtn = document.getElementById('boardToggleBtn');
   const boardBtnLabel = document.getElementById('boardBtnLabel');
 
   if (newMode === 'scratch') {
@@ -258,7 +244,6 @@ function _switchMode(newMode) {
     if (scratchPane) scratchPane.style.display = 'flex';
     if (boardPane) boardPane.style.display = 'none';
     if (scratchControls) scratchControls.style.display = 'flex';
-    if (uploadBtn) uploadBtn.style.display = 'none';
     if (boardBtnLabel) boardBtnLabel.textContent = 'Board';
 
     _setView('stage');
@@ -268,7 +253,6 @@ function _switchMode(newMode) {
     if (scratchPane) scratchPane.style.display = 'none';
     if (boardPane) boardPane.style.display = 'flex';
     if (scratchControls) scratchControls.style.display = 'none';
-    if (uploadBtn) uploadBtn.style.display = 'flex';
     if (boardBtnLabel) boardBtnLabel.textContent = 'Board';
 
     _setView('code');

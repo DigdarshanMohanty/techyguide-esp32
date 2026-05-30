@@ -194,7 +194,8 @@ function renderPanel() {
     }
 
     thumb.addEventListener('click', (e) => {
-      if (e.target.classList.contains('delete-btn')) {
+      const delTarget = e.target.closest('.delete-btn');
+      if (delTarget) {
           e.stopPropagation();
           spriteStore.removeSprite(sprite.id);
           return;

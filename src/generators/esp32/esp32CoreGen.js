@@ -4,8 +4,11 @@ import { Order } from "blockly/python";
 export const forBlock = Object.create(null);
 
 forBlock["esp32_when_starts"] = function (block, generator) {
-  
-  return "";
+  // Hat block — just emit the inner statements.
+  // Do NOT wrap in while True here; the user adds a "forever" block if needed.
+  // This prevents broken nested while-True loops.
+  const inner = generator.statementToCode(block, 'DO') || '';
+  return inner;
 };
 
 forBlock["esp32_read_digital_pin"] = function (block, generator) {
@@ -60,4 +63,10 @@ forBlock["esp32_map_value"] = function (block, generator) {
 `def _map(x, in_min, in_max, out_min, out_max):
     return int((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min)`;
   return [`_map(${value}, ${fromLow}, ${fromHigh}, ${toLow}, ${toHigh})`, Order.FUNCTION_CALL];
+};
+
+forBlock["esp32_hall_magnet_detected"] = function (block, generator) {
+  const threshold = block.getFieldValue("THRESHOLD") || "100";
+  generator.definitions_["import_esp32"] = "import esp32";
+  return [`abs(esp32.hall_sensor()) > ${threshold}`, Order.COMPARISON];
 };
