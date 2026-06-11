@@ -19,16 +19,21 @@ function isFunctionDef(line) {
 }
 
 function isPinInit(line) {
-  // Matches hoisted pin/hardware setup lines and their continuations:
-  // trig_18 = Pin(18, Pin.OUT)  — assignment
-  // adc_34.atten(ADC.ATTN_11DB) — method call continuation
-  return /^(trig_|echo_|dht_|adc_|pin_)\d+\s*[.=]/.test(line.trim()) && !line.startsWith(" ");
+  const t = line.trim();
+  return (
+    !line.startsWith(" ") &&
+    !line.startsWith("\t") &&
+    /^\w+\s*=\s*(Pin|PWM|ADC|I2C|SPI|UART|DHT|Timer|RTC|WDT|SoftI2C)\s*\(/.test(t)
+  );
 }
 
 function isVarInit(line) {
-  // Matches Blockly-generated variable declarations: distance = None, speed = None
-  // These should be placed in the setup section, not leak above the loop
-  return /^\w+\s*=\s*None\s*$/.test(line.trim()) && !line.startsWith(" ");
+  const t = line.trim();
+  return (
+    !line.startsWith(" ") &&
+    !line.startsWith("\t") &&
+    /^\w+\s*=\s*(None|0|False|True|\[\]|\{\}|""|'')$/.test(t)
+  );
 }
 
 function hasTopLevelLoop(lines) {
@@ -49,11 +54,7 @@ export function buildESP32Code(rawCode) {
 
   for (const line of allLines) {
     if (line.trim() === "") {
-      // Blank lines end function definitions
-      if (inDef) {
-        inDef = false;
-        defLines.push("");
-      }
+      if (inDef) defLines.push("");   // preserve blank lines inside functions
       continue;
     }
     if (isScaffolding(line)) continue;
@@ -86,12 +87,11 @@ export function buildESP32Code(rawCode) {
     }
 
     if (inDef) {
-      // Lines that are indented belong to the current function definition
       if (line.startsWith(" ") || line.startsWith("\t")) {
         defLines.push(line);
         continue;
       } else {
-        // Non-indented line — function definition ended
+        // Non-indented, non-blank line — function truly ended
         inDef = false;
       }
     }

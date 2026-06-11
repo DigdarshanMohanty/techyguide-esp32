@@ -1,5 +1,6 @@
 // Arduino (C++) code generator for Blockly
 import * as Blockly from 'blockly';
+import { SketchRegistry } from './arduino/SketchRegistry';
 
 // Operator precedence for C++/Arduino — higher number = lower precedence
 export const ArduinoOrder = {
@@ -29,6 +30,8 @@ arduinoGenerator.ORDER_OVERRIDES = [];
 
 arduinoGenerator.init = function (workspace) {
   this.definitions_ = Object.create(null);
+  this.setupCode_   = Object.create(null);
+  this.sketch = new SketchRegistry();
   if (!this.nameDB_) {
     this.nameDB_ = new Blockly.Names('');
   }

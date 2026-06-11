@@ -3,7 +3,7 @@
 let nextSpriteId = 1;
 
 const SCRATCH_CAT_SVG = `data:image/svg+xml,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
   <g fill="none" stroke="#000" stroke-width="1.5">
     <!-- Body -->
     <ellipse cx="48" cy="56" rx="28" ry="24" fill="#FFAB19"/>
@@ -57,7 +57,13 @@ export class Sprite {
     this.penDown = false;
     this.penColor = '#4C97FF';
     this.penSize = 1;
-    this.penTrails = [];  
+    this.penTrails = [];
+
+    this.rotationStyle = 'all around'; // 'all around' | 'left-right' | "don't rotate"
+    this.effects = {};  // { COLOR: 0, GHOST: 0, BRIGHTNESS: 0, ... }
+    this.volume  = 100;
+    this.sounds  = {};  // name → URL mapping for user-added sounds
+    this.dragMode = 'draggable';
 
     this._costumeImages = new Map();
     this._loaded = false;
@@ -72,12 +78,16 @@ export class Sprite {
   addCostume(name, src) {
     this.costumes.push({ name, src });
     const img = new Image();
-    img.src = src;
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       this._costumeImages.set(name, img);
       this._loaded = true;
       if (this.onCostumeLoad) this.onCostumeLoad();
     };
+    img.onerror = () => {
+      console.warn(`[Sprite] Failed to load costume '${name}':`, src?.slice(0, 80));
+    };
+    img.src = src;
     return this;
   }
 
@@ -114,12 +124,13 @@ export class Sprite {
     this.y += steps * Math.sin(radians);
     this._clampToStage();
     if (this.penDown) {
-      this.penTrails.push({
-        x1: oldX, y1: oldY,
-        x2: this.x, y2: this.y,
-        color: this.penColor, size: this.penSize
-      });
+      this._addPenTrail(oldX, oldY, this.x, this.y);
     }
+  }
+
+  _addPenTrail(x1, y1, x2, y2) {
+    if (this.penTrails.length >= 10000) this.penTrails.shift();
+    this.penTrails.push({ x1, y1, x2, y2, color: this.penColor, size: this.penSize });
   }
 
   goToXY(x, y) {
@@ -128,11 +139,7 @@ export class Sprite {
     this.x = x;
     this.y = y;
     if (this.penDown) {
-      this.penTrails.push({
-        x1: oldX, y1: oldY,
-        x2: this.x, y2: this.y,
-        color: this.penColor, size: this.penSize
-      });
+      this._addPenTrail(oldX, oldY, this.x, this.y);
     }
   }
 
@@ -213,7 +220,15 @@ export class Sprite {
   }
 
   glideToXY(x, y, seconds) {
+    // Cancel any in-flight glide
+    if (this._glideRafId) {
+      cancelAnimationFrame(this._glideRafId);
+      this._glideRafId = null;
+      if (this._glideResolve) { this._glideResolve(); this._glideResolve = null; }
+    }
+
     return new Promise((resolve) => {
+      this._glideResolve = resolve;
       const startX = this.x;
       const startY = this.y;
       const startTime = Date.now();
@@ -222,20 +237,21 @@ export class Sprite {
       const step = () => {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
-        
         const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
         this.x = startX + (x - startX) * eased;
         this.y = startY + (y - startY) * eased;
 
         if (t < 1) {
-          requestAnimationFrame(step);
+          this._glideRafId = requestAnimationFrame(step);
         } else {
           this.x = x;
           this.y = y;
+          this._glideRafId = null;
+          this._glideResolve = null;
           resolve();
         }
       };
-      requestAnimationFrame(step);
+      this._glideRafId = requestAnimationFrame(step);
     });
   }
 }

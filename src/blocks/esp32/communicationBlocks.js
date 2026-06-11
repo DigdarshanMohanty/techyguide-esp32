@@ -1,17 +1,15 @@
 // esp32 communication blocks — serial, i2c, spi
 import * as Blockly from "blockly/core";
+import { boardRegistry } from '../../boards/BoardRegistry';
 
 const SERIAL_OPTIONS = [["0","0"],["1","1"],["2","2"]];
 const BAUD_OPTIONS = [
   ["9600","9600"],["19200","19200"],["38400","38400"],
   ["57600","57600"],["115200","115200"]
 ];
-const PIN_OPTIONS = [
-  ["2","2"],["4","4"],["5","5"],["12","12"],["13","13"],
-  ["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],
-  ["19","19"],["21","21"],["22","22"],["23","23"],["25","25"],
-  ["26","26"],["27","27"],["32","32"],["33","33"]
-];
+
+// Dynamic pin options from board registry (replaces hardcoded array)
+const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
 
 const btSerialBaud = {
   type: "esp32_bt_serial_baud",

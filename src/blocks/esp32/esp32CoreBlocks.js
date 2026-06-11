@@ -1,22 +1,11 @@
 // esp32 core blocks — pin mode, digital/analog read/write, delay
 import * as Blockly from "blockly/core";
+import { boardRegistry } from '../../boards/BoardRegistry';
 
-//User Choice of PINS
-const PIN_OPTIONS = [
-  ["2","2"],["4","4"],["5","5"],["12","12"],["13","13"],
-  ["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],
-  ["19","19"],["21","21"],["22","22"],["23","23"],["25","25"],
-  ["26","26"],["27","27"],["32","32"],["33","33"]
-];
-
-const ANALOG_PIN_OPTIONS = [
-  ["32","32"],["33","33"],["34","34"],["35","35"],["36","36"],["39","39"]
-];
-
-const TOUCH_PIN_OPTIONS = [
-  ["T0","0"],["T2","2"],["T3","15"],["T4","13"],["T5","12"],
-  ["T6","14"],["T7","27"],["T8","33"],["T9","32"]
-];
+// Dynamic pin options from board registry (replaces hardcoded arrays)
+const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
+const ANALOG_PIN_OPTIONS = () => boardRegistry.getAnalogPins();
+const TOUCH_PIN_OPTIONS = () => boardRegistry.getTouchPins();
 
 const whenEsp32StartsUp = {
   type: "esp32_when_starts",

@@ -1,5 +1,11 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const Dotenv = require("dotenv-webpack");
+const webpack = require("webpack");
+
+// Load .env values for DefinePlugin fallback
+const dotenv = require("dotenv");
+const envValues = dotenv.config().parsed || {};
 
 // Base config that applies to either development or production mode.
 const config = {
@@ -24,11 +30,16 @@ const config = {
     ],
   },
   plugins: [
-    // Generate the HTML index page based on our template.
-    // This will output the same index page with the bundle we
-    // created above added in a script tag.
     new HtmlWebpackPlugin({
       template: "src/index.html",
+    }),
+    // Load .env file — exposes process.env.* to browser bundle
+    new Dotenv({ safe: false, silent: true }),
+    // Inject COMPILE_SERVER_URL with fallback to localhost
+    new webpack.DefinePlugin({
+      __COMPILE_SERVER_URL__: JSON.stringify(
+        envValues.COMPILE_SERVER_URL || "http://localhost:3100/compile"
+      ),
     }),
   ],
 };

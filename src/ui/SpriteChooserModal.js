@@ -1,11 +1,17 @@
-// modal for selecting or uploading sprites from the built-in library
-import { SPRITE_LIBRARY } from './spriteLibrary.js';
+// modal for selecting or uploading sprites from the Scratch CDN library
+import { fetchScratchSprites, fetchSpriteCategories } from './ScratchAssetLibrary.js';
 import spriteStore from '../engine/SpriteStore.js';
 
 let modalEl = null;
 
+// Module-level state for CDN data — preserved across open/close cycles
+let _sprites    = [];
+let _categories = ['All'];
+let _activeCategory = 'All';
+let _searchQuery    = '';
+
 export function openSpriteChooser() {
-  if (modalEl) return; 
+  if (modalEl) return;
 
   modalEl = document.createElement('div');
   modalEl.className = 'chooser-overlay';
@@ -13,37 +19,64 @@ export function openSpriteChooser() {
     <div class="chooser-modal">
       <div class="chooser-header">
         <h3>Choose a Sprite</h3>
-        <button class="chooser-close" id="closeSpriteChooser"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        <button class="chooser-close" id="closeSpriteChooser">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
       </div>
 
       <div class="chooser-tabs">
-        <button class="chooser-tab active" data-tab="library">Library</button>
-        <button class="chooser-tab" data-tab="upload">Upload</button>
+        <button class="chooser-tab-btn active" data-tab="library">Library</button>
+        <button class="chooser-tab-btn" data-tab="upload">Upload</button>
+      </div>
+
+      <div class="chooser-controls">
+        <input type="text" class="chooser-search-input"
+               id="spriteSearchTop" placeholder="Search sprites..." />
+      </div>
+
+      <div class="chooser-categories" id="spriteCategories">
+        <!-- populated dynamically -->
       </div>
 
       <div class="chooser-body" id="spriteChooserBody">
-        <!-- Library grid populated dynamically -->
+        <div class="chooser-loading">
+          <div class="chooser-spinner"></div>
+          Loading sprites...
+        </div>
       </div>
     </div>
   `;
 
   document.body.appendChild(modalEl);
 
-  renderLibraryGrid();
+  loadSprites();
 
   modalEl.querySelector('#closeSpriteChooser').addEventListener('click', close);
   modalEl.addEventListener('click', (e) => {
     if (e.target === modalEl) close();
   });
-
   document.addEventListener('keydown', onEsc);
 
-  modalEl.querySelectorAll('.chooser-tab').forEach(tab => {
+  // Bind top search input
+  modalEl.querySelector('#spriteSearchTop')?.addEventListener('input', e => {
+    _searchQuery = e.target.value;
+    if (_sprites.length > 0) renderLibraryGrid();
+  });
+
+  modalEl.querySelectorAll('.chooser-tab-btn').forEach(tab => {
     tab.addEventListener('click', () => {
-      modalEl.querySelectorAll('.chooser-tab').forEach(t => t.classList.remove('active'));
+      modalEl.querySelectorAll('.chooser-tab-btn').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       if (tab.dataset.tab === 'library') {
-        renderLibraryGrid();
+        if (_sprites.length > 0) {
+          renderLibraryGrid();
+        } else {
+          renderLoadingState();
+          loadSprites();
+        }
       } else {
         renderUploadPane();
       }
@@ -53,45 +86,119 @@ export function openSpriteChooser() {
   requestAnimationFrame(() => modalEl.classList.add('open'));
 }
 
-function renderLibraryGrid() {
-  const body = modalEl.querySelector('#spriteChooserBody');
-
-  const categories = {};
-  SPRITE_LIBRARY.forEach(s => {
-    const cat = s.category || 'Other';
-    if (!categories[cat]) categories[cat] = [];
-    categories[cat].push(s);
-  });
-
-  let html = '';
-  for (const [cat, sprites] of Object.entries(categories)) {
-    html += `<div class="chooser-category"><span>${cat}</span></div>`;
-    html += '<div class="chooser-grid">';
-    sprites.forEach((sprite, idx) => {
-      html += `
-        <div class="chooser-item" data-sprite-name="${sprite.name}">
-          <img src="${sprite.svg}" alt="${sprite.name}" />
-          <span>${sprite.name}</span>
-        </div>
-      `;
+function loadSprites() {
+  fetchScratchSprites()
+    .then(data => {
+      _sprites = data;
+      if (isLibraryTabActive()) {
+        renderCategoryPills();
+        renderLibraryGrid();
+      }
+    })
+    .catch(err => {
+      if (isLibraryTabActive()) renderErrorState(err.message);
     });
-    html += '</div>';
+
+  fetchSpriteCategories()
+    .then(cats => {
+      _categories = cats;
+      if (isLibraryTabActive()) renderCategoryPills();
+    });
+}
+
+function isLibraryTabActive() {
+  if (!modalEl) return false;
+  const activeTab = modalEl.querySelector('.chooser-tab-btn.active');
+  return !activeTab || activeTab.dataset.tab === 'library';
+}
+
+function renderCategoryPills() {
+  const container = modalEl?.querySelector('#spriteCategories');
+  if (!container) return;
+  container.innerHTML = _categories.map(cat => `
+    <button class="category-pill ${cat === _activeCategory ? 'active' : ''}"
+            data-category="${cat}">${cat}</button>
+  `).join('');
+  container.querySelectorAll('.category-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      _activeCategory = pill.dataset.category;
+      renderCategoryPills();
+      renderLibraryGrid();
+    });
+  });
+}
+
+function renderLibraryGrid() {
+  const body = modalEl?.querySelector('#spriteChooserBody');
+  if (!body) return;
+
+  let filtered = _sprites;
+  if (_activeCategory !== 'All') {
+    filtered = filtered.filter(s =>
+      s.category === _activeCategory || s.tags.includes(_activeCategory)
+    );
+  }
+  if (_searchQuery.trim()) {
+    const q = _searchQuery.toLowerCase();
+    filtered = filtered.filter(s => s.name.toLowerCase().includes(q));
   }
 
-  body.innerHTML = html;
+  const gridHtml = filtered.length === 0
+    ? '<div class="chooser-empty">No sprites found</div>'
+    : filtered.map(sprite => `
+        <div class="chooser-item sprite-item" data-sprite-name="${sprite.name}">
+          <img src="${sprite.thumbnailUrl}" alt="${sprite.name}" loading="lazy"
+               onerror="this.style.opacity='0.2'" />
+          <span>${sprite.name}</span>
+        </div>
+      `).join('');
 
-  body.querySelectorAll('.chooser-item').forEach(item => {
+  body.innerHTML = `<div class="chooser-grid">${gridHtml}</div>`;
+
+  body.querySelectorAll('.sprite-item').forEach(item => {
     item.addEventListener('click', () => {
-      const name = item.dataset.spriteName;
-      const spriteDef = SPRITE_LIBRARY.find(s => s.name === name);
-      if (spriteDef) {
-        const i = spriteStore.getAllSprites().length + 1;
-        const displayName = `${spriteDef.name}${i > 1 ? i : ''}`;
-        spriteStore.addSprite(displayName, { costumeSrc: spriteDef.svg });
-      }
+      const sprite = _sprites.find(s => s.name === item.dataset.spriteName);
+      if (!sprite) return;
+      addSpriteToProject(sprite);
       close();
     });
   });
+}
+
+function renderLoadingState() {
+  const body = modalEl?.querySelector('#spriteChooserBody');
+  if (body) body.innerHTML = '<div class="chooser-loading"><div class="chooser-spinner"></div>Loading sprites...</div>';
+}
+
+function renderErrorState(msg) {
+  const body = modalEl?.querySelector('#spriteChooserBody');
+  if (!body) return;
+  body.innerHTML = `
+    <div class="chooser-error">
+      Failed to load sprites. Check your internet connection.
+      <br><small>${msg || ''}</small>
+      <button id="retryBtn">Retry</button>
+    </div>
+  `;
+  body.querySelector('#retryBtn')?.addEventListener('click', () => {
+    renderLoadingState();
+    loadSprites();
+  });
+}
+
+function addSpriteToProject(scratchSprite) {
+  const i = spriteStore.getAllSprites().length + 1;
+  const displayName = `${scratchSprite.name}${i > 1 ? i : ''}`;
+  const sprite = spriteStore.addSprite(displayName, {
+    costumeSrc: scratchSprite.costumes[0]?.src || scratchSprite.thumbnailUrl,
+  });
+
+  // Add remaining costumes if the sprite store supports it
+  if (sprite && typeof sprite.addCostume === 'function') {
+    for (let j = 1; j < scratchSprite.costumes.length; j++) {
+      sprite.addCostume(scratchSprite.costumes[j].name, scratchSprite.costumes[j].src);
+    }
+  }
 }
 
 function renderUploadPane() {
@@ -115,18 +222,18 @@ function renderUploadPane() {
   `;
 
   const fileInput = body.querySelector('#spriteFileInput');
-  fileInput.addEventListener('change', (e) => {
+  fileInput.addEventListener('change', e => {
     const file = e.target.files[0];
     if (file) handleCustomUpload(file);
   });
 
   const dropZone = body.querySelector('#spriteDropZone');
-  dropZone.addEventListener('dragover', (e) => {
+  dropZone.addEventListener('dragover', e => {
     e.preventDefault();
     dropZone.classList.add('drag-over');
   });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', (e) => {
+  dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
@@ -153,7 +260,6 @@ function close() {
   if (!modalEl) return;
   modalEl.classList.remove('open');
   document.removeEventListener('keydown', onEsc);
-  
   setTimeout(() => {
     if (modalEl && modalEl.parentNode) {
       modalEl.parentNode.removeChild(modalEl);

@@ -1,5 +1,6 @@
 // workspace validation — scans all blocks before code generation
 // detects unsupported block types, pin conflicts, orphans, and empty programs
+import { pinReservationManager } from '../boards/PinReservationManager';
 
 /**
  * Scan workspace for blocks that have no generator mapping.
@@ -174,11 +175,22 @@ export function fullValidation(workspace, generator) {
   }
   info.push(`Generator coverage: ${coverage.covered}/${coverage.total} block types.`);
 
-  // 3. Pin conflicts
+  // 3. Pin conflicts (legacy direction-based check)
   const pins = detectPinConflicts(workspace);
   if (pins.conflicts.length > 0) {
     for (const c of pins.conflicts) {
       errors.push(`Pin conflict: ${c}`);
+    }
+  }
+
+  // 3b. Pin reservation manager (richer: reserved pins, input-only, usage tracking)
+  pinReservationManager.scanWorkspace(workspace);
+  const reservationConflicts = pinReservationManager.getConflicts();
+  for (const c of reservationConflicts) {
+    // Avoid duplicate errors from the legacy check
+    const isDuplicate = errors.some(e => e.includes(`GPIO ${c.pin}`));
+    if (!isDuplicate) {
+      warnings.push(`Pin issue: ${c.message}`);
     }
   }
 

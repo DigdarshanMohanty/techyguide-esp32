@@ -6,6 +6,7 @@ let currentBoardView = 'stage'; // 'stage' | 'code'
 let selectedBoard = null; // 'i-bot' | 't-bot'
 let onModeChangeCallback = null;
 let onViewChangeCallback = null;
+let _escHandler = null; // stored so it can be removed if initModeSwitcher is called again
 
 // ── Toast notification ──────────────────────────────
 export function showToast(message) {
@@ -25,10 +26,13 @@ export function showToast(message) {
     transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   `;
 
-  toast.innerHTML = `
-    <i data-lucide="info" style="width:18px;height:18px;color:var(--accent);flex-shrink:0;"></i>
-    <span>${message}</span>
-  `;
+  const icon = document.createElement('i');
+  icon.dataset.lucide = 'info';
+  icon.style.cssText = 'width:18px;height:18px;color:var(--accent);flex-shrink:0;';
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = message;
+  toast.appendChild(icon);
+  toast.appendChild(msgSpan);
 
   document.body.appendChild(toast);
   refreshIcons();
@@ -161,12 +165,14 @@ export function initModeSwitcher(onModeChange, onViewChange) {
     boardPanel.classList.remove('open');
   });
 
-  // ESC key to close
-  document.addEventListener('keydown', (e) => {
+  // ESC key to close — remove old handler first to prevent accumulation on re-init
+  if (_escHandler) document.removeEventListener('keydown', _escHandler);
+  _escHandler = (e) => {
     if (e.key === 'Escape' && boardPanel.classList.contains('open')) {
       boardPanel.classList.remove('open');
     }
-  });
+  };
+  document.addEventListener('keydown', _escHandler);
 
   // Open modal
   boardBtn.addEventListener('click', (e) => {

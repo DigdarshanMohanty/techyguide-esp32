@@ -1,12 +1,9 @@
 // esp32 actuator blocks — servo, motor, buzzer, led
 import * as Blockly from "blockly/core";
+import { boardRegistry } from '../../boards/BoardRegistry';
 
-const PIN_OPTIONS = [
-  ["2","2"],["4","4"],["5","5"],["12","12"],["13","13"],
-  ["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],
-  ["19","19"],["21","21"],["22","22"],["23","23"],["25","25"],
-  ["26","26"],["27","27"],["32","32"],["33","33"]
-];
+// Dynamic pin options from board registry (replaces hardcoded array)
+const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
 
 const SERVO_OPTIONS = [["1","1"],["2","2"],["3","3"],["4","4"]];
 const MOTOR_OPTIONS = [["1","1"],["2","2"],["3","3"],["4","4"]];

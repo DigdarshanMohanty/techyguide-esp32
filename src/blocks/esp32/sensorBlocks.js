@@ -1,16 +1,10 @@
 // esp32 sensor blocks — ultrasonic, ir, pir, rain, ldr, dht, analog, potentiometer
 import * as Blockly from "blockly/core";
+import { boardRegistry } from '../../boards/BoardRegistry';
 
-const PIN_OPTIONS = [
-  ["2","2"],["4","4"],["5","5"],["12","12"],["13","13"],
-  ["14","14"],["15","15"],["16","16"],["17","17"],["18","18"],
-  ["19","19"],["21","21"],["22","22"],["23","23"],["25","25"],
-  ["26","26"],["27","27"],["32","32"],["33","33"]
-];
-
-const ANALOG_PIN_OPTIONS = [
-  ["32","32"],["33","33"],["34","34"],["35","35"],["36","36"],["39","39"]
-];
+// Dynamic pin options from board registry (replaces hardcoded arrays)
+const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
+const ANALOG_PIN_OPTIONS = () => boardRegistry.getAnalogPins();
 
 const ultrasonic = {
   type: "esp32_ultrasonic",
@@ -108,11 +102,15 @@ const rainSensor = {
   type: "esp32_rain_sensor",
   message0: "read rain sensor at pin %1 mode %2",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: [
-      ...ANALOG_PIN_OPTIONS,
-      ["2","2"],["4","4"],["5","5"],["13","13"],["14","14"],["15","15"],
-      ["16","16"],["17","17"],["18","18"],["19","19"],["21","21"],["22","22"],["23","23"]
-    ]},
+    { type: "field_dropdown", name: "PIN", options: () => {
+      // Rain sensor supports both analog and digital pins
+      const analog = boardRegistry.getAnalogPins();
+      const digital = boardRegistry.getDigitalPins();
+      // Merge: analog first, then digital pins not already in analog
+      const analogValues = new Set(analog.map(p => p[1]));
+      const extra = digital.filter(p => !analogValues.has(p[1]));
+      return [...analog, ...extra];
+    }},
     { type: "field_dropdown", name: "MODE", options: [
       ["analog (0-4095)","ANALOG"],
       ["digital (0/1)","DIGITAL"]
@@ -175,4 +173,3 @@ export const sensorBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
   pirSensor, irSensor, rainSensor, ldrSensor,
   hallModuleValue, hallModuleDetected, hallModuleWait
 ]);
-

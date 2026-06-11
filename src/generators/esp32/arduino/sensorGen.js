@@ -33,7 +33,7 @@ forBlock['esp32_dht'] = function (block, generator) {
   const pin = block.getFieldValue('PIN');
   generator.definitions_['include_dht'] = '#include <DHT.h>';
   generator.definitions_[`decl_dht_${pin}`] = `DHT dht${pin}(${pin}, DHT11);`;
-  generator.definitions_[`init_dht_${pin}`] = `// Call dht${pin}.begin() in setup()`;
+  generator.sketch.setup(`init_dht_${pin}`, `dht${pin}.begin();`);
   const method = reading === 'temperature' ? 'readTemperature()' : 'readHumidity()';
   return [`dht${pin}.${method}`, ArduinoOrder.FUNCTION_CALL];
 };
@@ -73,4 +73,20 @@ forBlock['esp32_ir_sensor'] = function (block, generator) {
 forBlock['esp32_pir_sensor'] = function (block, generator) {
   const pin = block.getFieldValue('PIN');
   return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
+};
+
+forBlock['esp32_hall_module_value'] = function (block, generator) {
+  const pin = block.getFieldValue('PIN');
+  return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
+};
+
+forBlock['esp32_hall_module_detected'] = function (block, generator) {
+  const pin = block.getFieldValue('PIN');
+  return [`(digitalRead(${pin}) == LOW)`, ArduinoOrder.EQUALITY];
+};
+
+forBlock['esp32_hall_module_wait'] = function (block, generator) {
+  const pin = block.getFieldValue('PIN');
+  generator.setupCode_[`pinMode_${pin}`] = `pinMode(${pin}, INPUT);`;
+  return `while (digitalRead(${pin}) == HIGH) { delay(10); }\n`;
 };

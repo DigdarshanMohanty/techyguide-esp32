@@ -21,7 +21,8 @@ forBlock['esp32_read_analog_pin'] = function (block, generator) {
 forBlock['esp32_set_digital_pin'] = function (block, generator) {
   const pin = block.getFieldValue('PIN');
   const state = block.getFieldValue('STATE') === '1' ? 'HIGH' : 'LOW';
-  return `pinMode(${pin}, OUTPUT);\ndigitalWrite(${pin}, ${state});\n`;
+  generator.setupCode_[`pinMode_${pin}`] = `pinMode(${pin}, OUTPUT);`;
+  return `digitalWrite(${pin}, ${state});\n`;
 };
 
 forBlock['esp32_set_pwm_pin'] = function (block, generator) {
@@ -51,4 +52,9 @@ forBlock['esp32_map_value'] = function (block, generator) {
   const toHigh = block.getFieldValue('TO_HIGH');
   const value = generator.valueToCode(block, 'VALUE', ArduinoOrder.NONE) || '0';
   return [`map(${value}, ${fromLow}, ${fromHigh}, ${toLow}, ${toHigh})`, ArduinoOrder.FUNCTION_CALL];
+};
+
+forBlock['esp32_hall_magnet_detected'] = function (block, generator) {
+  const threshold = block.getFieldValue('THRESHOLD') || '100';
+  return [`(abs(hallRead()) > ${threshold})`, ArduinoOrder.FUNCTION_CALL];
 };

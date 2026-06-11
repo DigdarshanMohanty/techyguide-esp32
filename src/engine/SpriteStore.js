@@ -1,6 +1,7 @@
 // Sprite Store
 
 import { Sprite } from './SpriteEngine.js';
+import eventBus, { Events } from './EventBus.js';
 
 class SpriteStore {
   constructor() {
@@ -102,6 +103,57 @@ class SpriteStore {
   setBackdrop(backdropDef) {
     this._currentBackdrop = backdropDef;
     this._emit('backdrop', backdropDef);
+    eventBus.emit(Events.BACKDROP_SWITCHED, backdropDef.name);
+  }
+
+  cloneSprite(id) {
+    const original = this.getSpriteById(id);
+    if (!original) return null;
+    const clone = new Sprite(original.name + '_clone', {
+      x: original.x, y: original.y,
+      direction: original.direction,
+      size: original.size,
+      costumeSrc: original.getCurrentCostume()?.src,
+    });
+    clone._parentId = id;
+    clone.isClone   = true;
+    clone.onCostumeLoad = () => this._emit('update', clone);
+    this.sprites.push(clone);
+    this._emit('add', clone);
+    return clone;
+  }
+
+  deleteClone(id) {
+    const sprite = this.getSpriteById(id);
+    if (!sprite || !sprite.isClone) return;
+    const idx = this.sprites.findIndex(s => s.id === id);
+    if (idx !== -1) this.sprites.splice(idx, 1);
+    this._emit('remove', sprite);
+  }
+
+  moveToFront(id) {
+    const idx = this.sprites.findIndex(s => s.id === id);
+    if (idx === -1) return;
+    const [sprite] = this.sprites.splice(idx, 1);
+    this.sprites.push(sprite);
+    this._emit('update', sprite);
+  }
+
+  moveToBack(id) {
+    const idx = this.sprites.findIndex(s => s.id === id);
+    if (idx === -1) return;
+    const [sprite] = this.sprites.splice(idx, 1);
+    this.sprites.unshift(sprite);
+    this._emit('update', sprite);
+  }
+
+  changeLayer(id, delta) {
+    const idx = this.sprites.findIndex(s => s.id === id);
+    if (idx === -1) return;
+    const newIdx = Math.max(0, Math.min(this.sprites.length - 1, idx + delta));
+    const [sprite] = this.sprites.splice(idx, 1);
+    this.sprites.splice(newIdx, 0, sprite);
+    this._emit('update', sprite);
   }
 
   getCurrentBackdrop() {

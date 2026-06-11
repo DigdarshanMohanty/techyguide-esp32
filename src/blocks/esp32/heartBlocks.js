@@ -1,9 +1,9 @@
 // Heart/Pulse Sensor block definitions
 import * as Blockly from "blockly/core";
+import { boardRegistry } from '../../boards/BoardRegistry';
 
-const ANALOG_PIN_OPTIONS = [
-  ["32","32"],["33","33"],["34","34"],["35","35"],["36","36"],["39","39"]
-];
+// Dynamic pin options from board registry (replaces hardcoded array)
+const ANALOG_PIN_OPTIONS = () => boardRegistry.getAnalogPins();
 
 const heartInit = {
   type: "esp32_heart_init",

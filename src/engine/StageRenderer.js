@@ -18,11 +18,12 @@ export class StageRenderer {
     this._onStageClick = null;
 
     this.app = null;
-    this._pixiSprites = new Map();       
-    this._penContainer = null;           
-    this._spriteContainer = null;        
-    this._bubbleContainer = null;        
-    this._bubbleObjects = new Map();     
+    this._pixiSprites = new Map();
+    this._textureCache = new Map();
+    this._penContainer = null;
+    this._spriteContainer = null;
+    this._bubbleContainer = null;
+    this._bubbleObjects = new Map();
     this._penGraphics = null;
   }
 
@@ -37,6 +38,7 @@ export class StageRenderer {
       autoDensity: true,
     });
 
+    this.app.renderer.background.color = 0xffffff;
     this.containerEl.appendChild(this.app.canvas);
     this.app.canvas.style.width = '100%';
     this.app.canvas.style.height = '100%';
@@ -86,8 +88,7 @@ export class StageRenderer {
     if (!bd) return;
 
     if (bd.type === 'color') {
-      
-      this.app.renderer.background.color = bd.value;
+      this.app.renderer.background.color = parseInt(bd.value.replace('#', ''), 16);
       this._bgSprite.visible = false;
     } else if (bd.type === 'gradient') {
       
@@ -122,24 +123,30 @@ export class StageRenderer {
         this._bgSprite.width = this.width;
         this._bgSprite.height = this.height;
       };
+      img.onerror = () => { URL.revokeObjectURL(url); };
       img.src = url;
     } else if (bd.type === 'svg' || bd.type === 'image') {
-      
       this._bgSprite.visible = true;
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
-        // Draw onto a clean canvas to avoid tainted canvas / CORS WebGL errors
-        const canvas = document.createElement('canvas');
-        canvas.width = this.width;
-        canvas.height = this.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, this.width, this.height);
-        const tex = Texture.from(canvas);
-        this._bgSprite.texture = tex;
-        this._bgSprite.width = this.width;
-        this._bgSprite.height = this.height;
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = this.width;
+          canvas.height = this.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, this.width, this.height);
+          if (this._bgSprite.texture && this._bgSprite.texture !== Texture.EMPTY) {
+            this._bgSprite.texture.destroy();
+          }
+          this._bgSprite.texture = Texture.from(canvas);
+          this._bgSprite.width   = this.width;
+          this._bgSprite.height  = this.height;
+        } catch (e) {
+          console.warn('[StageRenderer] backdrop texture failed:', bd.value?.slice(0, 60), e.message);
+        }
       };
+      img.onerror = () => console.warn('[StageRenderer] backdrop image load failed:', bd.value?.slice(0, 60));
       img.src = bd.value;
     }
   }
@@ -234,9 +241,9 @@ export class StageRenderer {
       }
 
       const costumeImg = sprite.getCostumeImage();
-      if (costumeImg && costumeImg.complete && costumeImg.naturalWidth > 0) {
-        const tex = Texture.from(costumeImg);
-        if (pixiSprite.texture !== tex) {
+      if (costumeImg && costumeImg.complete) {
+        const tex = this._imageToTexture(costumeImg);
+        if (tex && pixiSprite.texture !== tex) {
           pixiSprite.texture = tex;
         }
       }
@@ -247,12 +254,24 @@ export class StageRenderer {
         pixiSprite.y = pos.y;
       }
 
-      pixiSprite.rotation = ((sprite.direction - 90) * Math.PI) / 180;
+      const scale         = sprite.size / 100;
+      const rotationStyle = sprite.rotationStyle || 'all around';
+      const rad           = (sprite.direction - 90) * (Math.PI / 180);
 
-      const scale = sprite.size / 100;
-      pixiSprite.scale.set(scale);
+      if (rotationStyle === 'all around') {
+        pixiSprite.rotation = rad;
+        pixiSprite.scale.set(scale, scale);
+      } else if (rotationStyle === 'left-right') {
+        pixiSprite.rotation = 0;
+        const facingLeft = Math.cos(rad) < 0;
+        pixiSprite.scale.set(facingLeft ? -scale : scale, scale);
+      } else {
+        // "don't rotate"
+        pixiSprite.rotation = 0;
+        pixiSprite.scale.set(scale, scale);
+      }
 
-      pixiSprite.visible = sprite.visible && (sprite.id === spriteStore.selectedSpriteId);
+      pixiSprite.visible = sprite.visible;
       pixiSprite.alpha = sprite.opacity;
 
       pixiSprite.zIndex = i;
@@ -357,6 +376,40 @@ export class StageRenderer {
       this._bubbleContainer.removeChild(obj.container);
       obj.container.destroy({ children: true });
       this._bubbleObjects.delete(spriteId);
+    }
+  }
+
+  _imageToTexture(img) {
+    const key = img.src;
+    if (this._textureCache.has(key)) return this._textureCache.get(key);
+
+    const w = img.naturalWidth  > 0 ? img.naturalWidth  : 96;
+    const h = img.naturalHeight > 0 ? img.naturalHeight : 96;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const tex = Texture.from(canvas);
+      this._textureCache.set(key, tex);
+      return tex;
+    } catch (e) {
+      console.warn('[StageRenderer] _imageToTexture failed:', img.src?.slice(0, 60), e.message);
+      // Fallback: blue placeholder so something renders
+      const fb = document.createElement('canvas');
+      fb.width = 96; fb.height = 96;
+      const ctx = fb.getContext('2d');
+      ctx.fillStyle = '#4C97FF';
+      ctx.fillRect(0, 0, 96, 96);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '48px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('?', 48, 62);
+      const tex = Texture.from(fb);
+      this._textureCache.set(key, tex);
+      return tex;
     }
   }
 

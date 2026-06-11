@@ -2,6 +2,9 @@
 import { uploadToESP32 } from "../upload/serialUpload";
 import { refreshIcons } from "./icons";
 import { connectSerialMonitor, toggleMonitor as smToggle } from "./SerialMonitor";
+import { compileArduinoSketch } from "../upload/compileService";
+import { flashESP32, isEsptoolAvailable } from "../upload/espFlasher";
+import { boardRegistry } from "../boards/BoardRegistry";
 
 const STATUS_LABELS = {
   idle: { text: "Ready", cls: "status-idle" },
@@ -11,6 +14,14 @@ const STATUS_LABELS = {
   entering_repl: { text: "Entering REPL…", cls: "status-waiting" },
   uploading: { text: "Uploading…", cls: "status-uploading" },
   reading_output: { text: "Reading output…", cls: "status-uploading" },
+  compiling: { text: "Compiling…", cls: "status-waiting" },
+  compiled: { text: "Compiled!", cls: "status-success" },
+  syncing: { text: "Syncing…", cls: "status-waiting" },
+  detecting: { text: "Detecting chip…", cls: "status-waiting" },
+  erasing: { text: "Erasing…", cls: "status-uploading" },
+  flashing: { text: "Flashing…", cls: "status-uploading" },
+  resetting: { text: "Resetting…", cls: "status-waiting" },
+  complete: { text: "Flash complete!", cls: "status-success" },
   success: { text: "Done!", cls: "status-success" },
   error: { text: "Error", cls: "status-error" },
 };
@@ -46,31 +57,31 @@ export function initUploadPanel(getCode, getLanguage) {
 export function updateUploadButtonForLanguage(lang) {
   const uploadBtnLabel = document.getElementById("uploadBtnLabel");
   if (uploadBtnLabel) {
-    uploadBtnLabel.textContent = lang === 'arduino' ? 'Download .ino' : 'Upload Code';
+    uploadBtnLabel.textContent = lang === 'arduino' ? 'Upload (Arduino)' : 'Upload Code';
   }
 }
 
 async function handleUpload() {
   if (_isUploading) return;
+  _isUploading = true;
+  setButtonState(true);
 
   const code = _getCode();
   if (!code || code.trim() === "") {
     showToast("No code in workspace. Add some blocks first.");
+    _isUploading = false;
+    setButtonState(false);
     return;
   }
 
   const lang = _getLanguage ? _getLanguage() : 'micropython';
 
   if (lang === 'arduino') {
-    // Arduino C++ cannot be compiled in the browser → download .ino
-    _downloadFile(code, 'sketch.ino', 'text/x-arduino');
-    showToast("Arduino sketch downloaded! Open in Arduino IDE to compile & upload.");
+    await handleArduinoUpload(code);
     return;
   }
 
   // ── MicroPython: upload via Web Serial Raw REPL ──
-  _isUploading = true;
-  setButtonState(true);
 
   try {
     const result = await uploadToESP32(code, (status) => {
@@ -105,6 +116,88 @@ async function handleUpload() {
   }
 }
 
+/**
+ * Arduino upload flow: compile → flash → serial monitor.
+ * Falls back to .ino download if esptool-js is not available.
+ */
+async function handleArduinoUpload(code) {
+  // Check if esptool-js is available for in-browser flashing
+  const canFlash = await isEsptoolAvailable();
+
+  if (!canFlash) {
+    // Fallback: download .ino file
+    _downloadFile(code, 'sketch.ino', 'text/x-arduino');
+    showToast("Arduino sketch downloaded! Open in Arduino IDE to compile & upload.\n(Install esptool-js for in-browser flashing)");
+    _isUploading = false;
+    setButtonState(false);
+    return;
+  }
+
+  let port = null;
+  try {
+    // Step 1: Request serial port before compiling
+    setStatus("waiting_port");
+    try {
+      port = await navigator.serial.requestPort();
+    } catch (portErr) {
+      if (portErr.name === "NotFoundError") {
+        showToast("No port selected. Upload cancelled.");
+        setStatus("idle");
+        _isUploading = false;
+        setButtonState(false);
+        return;
+      }
+      throw portErr;
+    }
+
+    // Step 2: Compile the sketch
+    const board = boardRegistry.getBoard();
+    const fqbn = board.fqbn;
+
+    const { binary, stdout, stderr } = await compileArduinoSketch(
+      code, fqbn, (status) => setStatus(status)
+    );
+
+    if (stderr) {
+      console.warn('[compile] Warnings:', stderr);
+    }
+    console.log('[compile] Output:', stdout);
+
+    // Step 3: Flash the binary (espFlasher manages the transport internally)
+    await flashESP32(binary, port, board, (status, percent) => {
+      setStatus(status);
+    });
+
+    setStatus("resetting");
+
+    // Wait for ESP32-D0WD to finish booting before reconnecting serial.
+    // The chip takes ~1200-1500ms to boot into user code after reset.
+    await new Promise(r => setTimeout(r, 1500));
+
+    setStatus("success");
+    showToast("Arduino firmware uploaded successfully!");
+
+    // Step 4: Resume serial monitor — open panel first, then connect
+    const smBody = document.getElementById('smBody');
+    if (smBody && smBody.style.display === 'none') {
+      smToggle();
+    }
+    await connectSerialMonitor();
+
+  } catch (err) {
+    setStatus("error");
+    showToast("Arduino upload error: " + err.message);
+    console.error('[arduino-upload]', err);
+  } finally {
+    // Always close the port if it was opened but not consumed by espFlasher
+    if (port) {
+      try { await port.close(); } catch { /* already closed by espFlasher */ }
+    }
+    _isUploading = false;
+    setButtonState(false);
+  }
+}
+
 function _downloadFile(content, filename, mimeType) {
   const blob = new Blob([content], { type: mimeType || "text/plain" });
   const link = document.createElement("a");
@@ -128,7 +221,7 @@ function setButtonState(uploading) {
     btn.disabled = uploading;
     const label = btn.querySelector('#uploadBtnLabel');
     if (label) {
-      label.textContent = uploading ? "Uploading…" : (_getLanguage?.() === 'arduino' ? 'Download .ino' : 'Upload Code');
+      label.textContent = uploading ? "Uploading…" : (_getLanguage?.() === 'arduino' ? 'Upload (Arduino)' : 'Upload Code');
     }
   }
 

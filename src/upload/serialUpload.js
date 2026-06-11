@@ -77,6 +77,12 @@ export async function uploadToESP32(code, onStatus = () => {}) {
     }
 
     // ── 1b. Acquire reader/writer ────────────────────
+    if (!port.writable) {
+      throw new Error('Serial port writable stream is not available. Try reconnecting.');
+    }
+    if (!port.readable) {
+      throw new Error('Serial port readable stream is not available. Try reconnecting.');
+    }
     writer = port.writable.getWriter();
     reader = port.readable.getReader();
 
@@ -101,46 +107,58 @@ export async function uploadToESP32(code, onStatus = () => {}) {
       return result;
     };
 
-    // ── 2. Interrupt any running program ─────────────
-    onStatus("interrupting");
-    await send("\x03");          // Ctrl+C
-    await delay(200);
-    await send("\x03");          // Ctrl+C again
-    await delay(300);
-    await readFor(400);          // drain any output
-
-    // ── 3. Enter Raw REPL ────────────────────────────
-    onStatus("entering_repl");
-    await send("\x01");          // Ctrl+A = enter raw REPL
-    await delay(300);
-    let greeting = await readFor(600);
-
-    if (!greeting.includes("raw REPL")) {
-      // Soft-reset and retry
-      await send("\x04");        // Ctrl+D = soft reset
-      await delay(1500);
-      await send("\x03");        // Ctrl+C to stop boot code
+    // ── 2–5. REPL communication with overall timeout ─
+    const replWork = async () => {
+      // ── 2. Interrupt any running program ───────────
+      onStatus("interrupting");
+      await send("\x03");          // Ctrl+C
       await delay(200);
-      await send("\x01");        // Ctrl+A
+      await send("\x03");          // Ctrl+C again
       await delay(300);
-      greeting = await readFor(600);
-    }
+      await readFor(400);          // drain any output
 
-    // ── 4. Send code ─────────────────────────────────
-    onStatus("uploading");
+      // ── 3. Enter Raw REPL ──────────────────────────
+      onStatus("entering_repl");
+      await send("\x01");          // Ctrl+A = enter raw REPL
+      await delay(300);
+      let greeting = await readFor(600);
 
-    const CHUNK_SIZE = 256;
-    for (let i = 0; i < code.length; i += CHUNK_SIZE) {
-      await send(code.slice(i, i + CHUNK_SIZE));
-      await delay(20);
-    }
+      if (!greeting.includes("raw REPL")) {
+        // Soft-reset and retry
+        await send("\x04");        // Ctrl+D = soft reset
+        await delay(1500);
+        await send("\x03");        // Ctrl+C to stop boot code
+        await delay(200);
+        await send("\x01");        // Ctrl+A
+        await delay(300);
+        greeting = await readFor(600);
+      }
 
-    await delay(100);
-    await send("\x04");          // Ctrl+D = compile & execute
+      // ── 4. Send code ────────────────────────────────
+      onStatus("uploading");
 
-    // ── 5. Read initial response (OK marker + any immediate errors) ──
-    onStatus("reading_output");
-    const response = await readFor(2000);
+      const CHUNK_SIZE = 256;
+      for (let i = 0; i < code.length; i += CHUNK_SIZE) {
+        await send(code.slice(i, i + CHUNK_SIZE));
+        await delay(20);
+      }
+
+      await delay(100);
+      await send("\x04");          // Ctrl+D = compile & execute
+
+      // ── 5. Read initial response ────────────────────
+      onStatus("reading_output");
+      return await readFor(4000);
+    };
+
+    const timeoutGuard = new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error('Upload timed out after 20 seconds. Is the board connected?')),
+        20000
+      )
+    );
+
+    const response = await Promise.race([replWork(), timeoutGuard]);
 
     let stdout = "";
     let stderr = "";
@@ -148,16 +166,14 @@ export async function uploadToESP32(code, onStatus = () => {}) {
     if (match) {
       stdout = match[1].trim();
       stderr = match[2].trim();
+    } else if (response.includes("OK")) {
+      // Partial response — code is running (common with while True: loops)
+      stdout = response.replace(/^OK/, "").trim();
+      stderr = "";
+    } else if (response.includes("Traceback") || response.includes("Error")) {
+      stderr = response.trim();
     } else {
-      // No OK..^D..^D framing found — could mean the code has a while-loop
-      // that's running and the framing markers haven't arrived yet.
-      // Check if we at least got "OK" (code accepted and running).
-      if (response.includes("OK")) {
-        stdout = response.replace("OK", "").trim();
-        stderr = "";
-      } else {
-        stdout = response.trim();
-      }
+      stdout = response.trim();
     }
 
     // ── 6. DO NOT exit raw REPL if code is still running ──
@@ -173,6 +189,10 @@ export async function uploadToESP32(code, onStatus = () => {}) {
 
     // ── 7. Release locks ─────────────────────────────
     await releaseLocks();
+
+    if (ownedPort && port) {
+      try { await port.close(); } catch (_) {}
+    }
 
     // ── 8. Wait for ESP32 to start outputting, then resume monitor ──
     await delay(500);

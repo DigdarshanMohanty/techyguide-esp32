@@ -12,13 +12,12 @@ export function buildArduinoSketch(workspace) {
 
   arduinoGenerator.init(workspace);
 
-  const setupLines = [];
   const loopLines = [];
 
   for (const block of topBlocks) {
     if (block.type === 'esp32_when_starts') {
       const inner = arduinoGenerator.statementToCode(block, 'DO') || '';
-      if (inner.trim()) setupLines.push(inner.trimEnd());
+      if (inner.trim()) loopLines.push(inner.trimEnd());
     } else {
       const code = arduinoGenerator.blockToCode(block);
       if (typeof code === 'string' && code.trim()) {
@@ -27,7 +26,7 @@ export function buildArduinoSketch(workspace) {
     }
   }
 
-  // Collect definitions: includes, pin-setup (→ setup), functions, globals
+  // ── Collect from legacy definitions_ (existing generators) ──────────────
   const includes = [];
   const pinSetupDefs = [];  // e.g. pinMode() — goes inside setup()
   const funcDefs = [];      // function declarations
@@ -45,21 +44,50 @@ export function buildArduinoSketch(workspace) {
     }
   }
 
+  // ── Collect from setupCode_ (pinMode calls injected by individual generators) ──
+  for (const val of Object.values(arduinoGenerator.setupCode_ || {})) {
+    if (!pinSetupDefs.includes(val)) pinSetupDefs.push(val);
+  }
+
+  // ── Collect from SketchRegistry (new generators: heart/lcd/mpu/l298n) ──
+  const sketch = arduinoGenerator.sketch;
+  if (sketch) {
+    for (const line of sketch.getIncludes()) {
+      if (!includes.includes(line)) includes.push(line);
+    }
+    for (const decl of sketch.getGlobals()) {
+      if (!globals.includes(decl)) globals.push(decl);
+    }
+    for (const fn of sketch.getFunctions()) {
+      if (!funcDefs.includes(fn)) funcDefs.push(fn);
+    }
+    // Pin setup and explicit setup entries both go into setup()
+    for (const ps of sketch.getPinSetup()) {
+      if (!pinSetupDefs.includes(ps)) pinSetupDefs.push(ps);
+    }
+    for (const entry of sketch.getSetup()) {
+      if (!pinSetupDefs.includes(entry)) pinSetupDefs.push(entry);
+    }
+  }
+
   const indentCode = (code) =>
     code
       .split('\n')
       .map((l) => (l.trim() ? '  ' + l : ''))
       .join('\n');
 
-  // Auto-inject Serial.begin if any code uses Serial
-  const allCode = setupLines.join('\n') + loopLines.join('\n');
-  const needsSerial = allCode.includes('Serial.print') || allCode.includes('Serial.read');
+  // Auto-inject Serial.begin if any code uses Serial (loop body or setup entries)
+  const loopCode = loopLines.join('\n');
+  const setupCode = Object.values(arduinoGenerator.setupCode_ || {}).join('\n');
+  const allCode = loopCode + '\n' + setupCode;
+  const needsSerial =
+    allCode.includes('Serial.') &&
+    !pinSetupDefs.some(l => l.includes('Serial.begin'));
 
-  // Combine setup: Serial.begin + pin setup defs + user setup blocks
+  // Combine setup: Serial.begin + pin setup defs
   const fullSetup = [];
   if (needsSerial) fullSetup.push('  Serial.begin(115200);');
   for (const pd of pinSetupDefs) fullSetup.push(indentCode(pd));
-  for (const sl of setupLines) fullSetup.push(indentCode(sl));
 
   const setupBody = fullSetup.length > 0 ? fullSetup.join('\n') : '';
 

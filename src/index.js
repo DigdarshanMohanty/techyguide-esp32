@@ -60,6 +60,10 @@ import { forBlock as arduinoNotificationGen } from "./generators/esp32/arduino/n
 import { forBlock as arduinoCameraGen } from "./generators/esp32/arduino/cameraGen";
 import { forBlock as arduinoIotGen } from "./generators/esp32/arduino/iotGen";
 import { forBlock as arduinoDabbleGen } from "./generators/esp32/arduino/dabbleGen";
+import { forBlock as arduinoHeartGen } from "./generators/esp32/arduino/heartGen";
+import { forBlock as arduinoL298nGen } from "./generators/esp32/arduino/l298nGen";
+import { forBlock as arduinoLcdGen } from "./generators/esp32/arduino/lcdGen";
+import { forBlock as arduinoMpuGen } from "./generators/esp32/arduino/mpuGen";
 
 import { motionBlocks } from "./blocks/motionBlocks";
 import { looksBlocks } from "./blocks/looksBlocks";
@@ -141,6 +145,10 @@ Object.assign(arduinoGenerator.forBlock, arduinoNotificationGen);
 Object.assign(arduinoGenerator.forBlock, arduinoCameraGen);
 Object.assign(arduinoGenerator.forBlock, arduinoIotGen);
 Object.assign(arduinoGenerator.forBlock, arduinoDabbleGen);
+Object.assign(arduinoGenerator.forBlock, arduinoHeartGen);
+Object.assign(arduinoGenerator.forBlock, arduinoL298nGen);
+Object.assign(arduinoGenerator.forBlock, arduinoLcdGen);
+Object.assign(arduinoGenerator.forBlock, arduinoMpuGen);
 
 // Arduino generators for General blocks (shared between Scratch and ESP32 toolboxes)
 arduinoGenerator.forBlock['print_block'] = function (block, generator) {
@@ -155,10 +163,11 @@ arduinoGenerator.forBlock['wait_block'] = function (block) {
   const time = block.getFieldValue('TIME') || '1';
   return `delay((long)(${time} * 1000));\n`;
 };
-arduinoGenerator.forBlock['digital_write'] = function (block) {
+arduinoGenerator.forBlock['digital_write'] = function (block, generator) {
   const pin = block.getFieldValue('PIN');
   const state = block.getFieldValue('STATE') === '1' ? 'HIGH' : 'LOW';
-  return `pinMode(${pin}, OUTPUT);\ndigitalWrite(${pin}, ${state});\n`;
+  generator.setupCode_[`pinMode_${pin}`] = `pinMode(${pin}, OUTPUT);`;
+  return `digitalWrite(${pin}, ${state});\n`;
 };
 
 // ── Fallback generators (Scratch-only blocks → safe no-ops) ──
@@ -234,12 +243,32 @@ interpreter.setRenderer(renderer);
   });
   renderer.setSprites(spriteStore.getAllSprites());
 
+  let previousSelectedId = spriteStore.getSelectedSprite()?.id || null;
+
   spriteStore.on((event, sprite) => {
-    if (event === "select" && sprite) {
+    if (event === "select") {
+      const newId = sprite?.id || null;
+
+      // Save outgoing sprite's workspace before switching
+      if (previousSelectedId && previousSelectedId !== newId) {
+        const outgoing = spriteStore.getSpriteById(previousSelectedId);
+        if (outgoing) {
+          spriteStore.saveWorkspaceState(previousSelectedId, Blockly.serialization.workspaces.save(ws));
+        }
+      }
+
+      // Guard: never clear workspace when no sprite is selected
+      if (!newId) {
+        previousSelectedId = null;
+        return;
+      }
+
       ws.clear();
       if (sprite.workspaceState) {
-          Blockly.serialization.workspaces.load(sprite.workspaceState, ws);
+        Blockly.serialization.workspaces.load(sprite.workspaceState, ws);
       }
+
+      previousSelectedId = newId;
     }
   });
 
@@ -264,8 +293,51 @@ interpreter.setRenderer(renderer);
       interpreter.stopAll();
   });
 
-  initSpritePanel();
+  initSpritePanel(ws);
+  renderCategorySidebar(ws);
 })();
+
+// ── Category Sidebar ────────────────────────────────
+function renderCategorySidebar(ws) {
+  const sidebar = document.getElementById('categorySidebar');
+  if (!sidebar) return;
+
+  const CATEGORIES = [
+    { name: 'Motion',    color: '#4C97FF' },
+    { name: 'Looks',     color: '#9966FF' },
+    { name: 'Sound',     color: '#CF63CF' },
+    { name: 'Events',    color: '#FFBF00' },
+    { name: 'Control',   color: '#FFAB19' },
+    { name: 'Sensing',   color: '#5CB1D6' },
+    { name: 'Operators', color: '#59C059' },
+    { name: 'Variables', color: '#FF8C1A' },
+    { name: 'My Blocks', color: '#FF6680' },
+  ];
+
+  sidebar.innerHTML = CATEGORIES.map(cat => `
+    <button
+      class="cat-btn"
+      data-category="${cat.name}"
+      style="background:${cat.color}"
+      title="${cat.name}"
+    ></button>
+  `).join('');
+
+  sidebar.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sidebar.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const toolbox = ws?.getToolbox();
+      if (toolbox) {
+        const items = toolbox.getToolboxItems();
+        const match = items.find(item => item.getName?.() === btn.dataset.category);
+        if (match) toolbox.setSelectedItem(match);
+      }
+    });
+  });
+
+  sidebar.querySelector('.cat-btn')?.classList.add('active');
+}
 
 // ── Mode Switcher ───────────────────────────────────
 initModeSwitcher(

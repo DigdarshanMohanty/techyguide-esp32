@@ -25,10 +25,12 @@ class EventBus {
 const eventBus = new EventBus();
 
 export const Events = {
-  GREEN_FLAG: 'GREEN_FLAG',
-  STOP_ALL: 'STOP_ALL',
-  KEY_PRESS: 'KEY_PRESS',
-  BROADCAST: 'BROADCAST',
+  GREEN_FLAG:        'GREEN_FLAG',
+  STOP_ALL:          'STOP_ALL',
+  KEY_PRESS:         'KEY_PRESS',
+  BROADCAST:         'BROADCAST',
+  CLONE_CREATED:     'CLONE_CREATED',
+  BACKDROP_SWITCHED: 'BACKDROP_SWITCHED',
 };
 
 export default eventBus;
