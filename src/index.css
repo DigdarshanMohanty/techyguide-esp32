@@ -1,3 +1,5 @@
+@import url('./ui/toolbox.css');
+
 /* ══════════════════════════════════════════════════════════
    TECHYGUIDE — SCRATCH-INSPIRED DESIGN SYSTEM
    Bold, colorful, playful. Scratch 3.0 vibes.
@@ -397,6 +399,18 @@ input:focus {
 .stop-btn:hover { border-color: var(--accent); }
 
 /* ── Main Layout ───────────────────────────────────── */
+#appHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #4C97FF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
 #pageContainer {
   display: flex;
   width: 100%;
@@ -837,36 +851,6 @@ input:focus {
 
 
 /* ── Blockly Overrides ── */
-.blocklyToolboxCategoryContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.blocklyToolboxCategory {
-  border: none !important;
-  padding: 0 !important;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: auto !important;
-  width: 100%;
-  background: none !important;
-}
-
-.blocklyToolboxCategoryGroup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: 20px 0;
-  gap: 50px;
-}
-
-.blocklyToolboxCategoryIcon { display: none !important; }
 
 /* Hide persistent scrollbars from Flyout */
 .blocklyScrollbarBackground,
@@ -875,16 +859,6 @@ input:focus {
   display: none !important;
   opacity: 0 !important;
 }
-#color-1 { background: #4c97ff; }
-#color-2 { background: #9966ff; }
-#color-3 { background: #cf63cf; }
-#color-4 { background: #ffbf00; }
-#color-5 { background: #ffab19; }
-#color-6 { background: #5cb1d6; }
-#color-7 { background: #59c059; }
-#color-8 { background: #ff8c1a; }
-#color-9 { background: #00a69c; }
-#color-10 { background: var(--scratch-blue); }
 
 /* ── ESP32 Subcategory Labels ── */
 .esp32-subcategory-label .blocklyFlyoutLabelText {
@@ -908,18 +882,6 @@ input:focus {
   padding-left: 10px !important;
 }
 
-[id^="color-"] {
-  width: 30px;
-  height: 30px;
-  border-radius: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 5px 0;
-  pointer-events: none;
-}
-
-.blocklyTreeSeparator { display: none !important; }
 
 /* ── ESP32 Block Styling Overrides ─────────────────── */
 .blocklyDraggable .blocklyEditableText rect {
@@ -2053,89 +2015,25 @@ input:focus {
 .upload-browse-btn:hover { background: #3b82f6; }
 
 /* ════════════════════════════════════════════════════════
-   SCRATCH 3-COLUMN LAYOUT
+   BLOCKLY WORKSPACE
    ════════════════════════════════════════════════════════ */
 
-/* Full-width scratch pane replaces the old right-pane model */
-.scratch-pane-full {
-  width: 100% !important;
-  flex: 1 1 auto !important;
-  flex-basis: auto !important;
-  border-left: none !important;
-  overflow: hidden;
-}
-
-.scratch-layout {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #F9F9F9;
-}
-
-/* ── Col 1A: Category sidebar (52px circles) ─────────── */
-.category-sidebar {
-  width: 52px;
-  flex-shrink: 0;
-  background: #ffffff;
-  border-right: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 0;
-  gap: 4px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  z-index: 5;
-}
-.category-sidebar::-webkit-scrollbar { display: none; }
-
-.cat-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: transform 0.1s, box-shadow 0.15s;
-}
-.cat-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.cat-btn.active {
-  outline: 3px solid rgba(255,255,255,0.9);
-  outline-offset: 1px;
-  box-shadow: 0 0 0 5px rgba(0,0,0,0.1);
-}
-
-/* ── Col 2: Blockly workspace (flex grows) ────────────── */
+/* #blocklyDiv is always visible in both modes — it flexes
+   to fill the space left of the 480px right panel. */
 .workspace-area {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
   background: #F9F9F9;
   position: relative;
-  height: 100%;
 }
 
-/* Blockly injects a div — make it fill the container */
-.workspace-area > div,
-.workspace-area .injectionDiv {
+/* Blockly injects its own div — fill the container */
+.workspace-area > .injectionDiv {
   width: 100% !important;
   height: 100% !important;
-}
-
-/* ── Col 3: Stage panel (480px) ───────────────────────── */
-.stage-panel {
-  width: 480px;
-  flex-shrink: 0;
-  background: #ffffff;
-  border-left: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 /* Stage controls bar */
@@ -2469,15 +2367,14 @@ input:focus {
 }
 .add-backdrop-btn:hover { transform: scale(1.1); }
 
-/* ── pageContainer in scratch mode fills full remaining height ─ */
+/* ── Mode switching — only the right panel swaps, blocklyDiv always visible ─ */
 #pageContainer {
   height: calc(100vh - 64px);
-}
-.mode-scratch #pageContainer,
-.mode-board #pageContainer {
   display: flex;
 }
+/* scratch mode: show stage panel, hide code panel */
 .mode-scratch #scratchPane  { display: flex !important; }
 .mode-scratch #boardPane    { display: none !important; }
+/* board mode: keep blocklyDiv visible, swap right panel to code editor */
 .mode-board   #scratchPane  { display: none !important; }
 .mode-board   #boardPane    { display: flex !important; }

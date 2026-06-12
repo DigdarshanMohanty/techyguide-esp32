@@ -77,7 +77,7 @@ import { StageRenderer } from "./engine/StageRenderer";
 import spriteStore from "./engine/SpriteStore";
 
 import { toolbox as espToolbox } from "./toolbox";
-import { addCustomToolbar } from "./ui/customToolbar";
+import './ui/CustomToolboxCategory'; // registers CustomToolboxCategory before Blockly.inject()
 
 import { initUploadPanel, updateUploadButtonForLanguage } from "./ui/uploadPanel";
 import { buildESP32Code } from "./upload/codeBuilder";
@@ -201,32 +201,14 @@ Blockly.common.defineBlocks(sensingBlocks);
 // ── Inject Blockly Workspace ────────────────────────
 const blocklyDiv = document.getElementById("blocklyDiv");
 
-const ws = Blockly.inject(blocklyDiv, { 
+const ws = Blockly.inject(blocklyDiv, {
   toolbox: scratchToolbox
 });
 
-addCustomToolbar();
-
-// ── Pane Toggle logic ───────────────────────────────
-const togglePaneBtn = document.getElementById("togglePaneBtn");
-if (togglePaneBtn) {
-  togglePaneBtn.addEventListener("click", () => {
-    togglePaneBtn.classList.toggle("is-collapsed");
-    
-    const scratchPane = document.getElementById("scratchPane");
-    const boardPane = document.getElementById("boardPane");
-    
-    if (scratchPane) scratchPane.classList.toggle("is-hidden");
-    if (boardPane) boardPane.classList.toggle("is-hidden");
-
-    // Trigger Blockly resize smoothly alongside the CSS transition
-    let start = performance.now();
-    requestAnimationFrame(function animate(time) {
-      Blockly.svgResize(ws);
-      if (time - start < 350) requestAnimationFrame(animate);
-    });
-  });
-}
+// Blockly measures its container at inject time; inside a flex column the
+// height may not be settled yet, so force a resize and keep it synced.
+requestAnimationFrame(() => Blockly.svgResize(ws));
+new ResizeObserver(() => Blockly.svgResize(ws)).observe(blocklyDiv);
 
 
 // ── Stage Renderer + Interpreter ────────────────────
@@ -294,50 +276,7 @@ interpreter.setRenderer(renderer);
   });
 
   initSpritePanel(ws);
-  renderCategorySidebar(ws);
 })();
-
-// ── Category Sidebar ────────────────────────────────
-function renderCategorySidebar(ws) {
-  const sidebar = document.getElementById('categorySidebar');
-  if (!sidebar) return;
-
-  const CATEGORIES = [
-    { name: 'Motion',    color: '#4C97FF' },
-    { name: 'Looks',     color: '#9966FF' },
-    { name: 'Sound',     color: '#CF63CF' },
-    { name: 'Events',    color: '#FFBF00' },
-    { name: 'Control',   color: '#FFAB19' },
-    { name: 'Sensing',   color: '#5CB1D6' },
-    { name: 'Operators', color: '#59C059' },
-    { name: 'Variables', color: '#FF8C1A' },
-    { name: 'My Blocks', color: '#FF6680' },
-  ];
-
-  sidebar.innerHTML = CATEGORIES.map(cat => `
-    <button
-      class="cat-btn"
-      data-category="${cat.name}"
-      style="background:${cat.color}"
-      title="${cat.name}"
-    ></button>
-  `).join('');
-
-  sidebar.querySelectorAll('.cat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sidebar.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const toolbox = ws?.getToolbox();
-      if (toolbox) {
-        const items = toolbox.getToolboxItems();
-        const match = items.find(item => item.getName?.() === btn.dataset.category);
-        if (match) toolbox.setSelectedItem(match);
-      }
-    });
-  });
-
-  sidebar.querySelector('.cat-btn')?.classList.add('active');
-}
 
 // ── Mode Switcher ───────────────────────────────────
 initModeSwitcher(
@@ -347,8 +286,6 @@ initModeSwitcher(
 
     if (newMode === "scratch") {
       ws.updateToolbox(scratchToolbox);
-      addCustomToolbar();
-
       ws.clear();
       const activeSprite = spriteStore.getSelectedSprite();
       if (activeSprite && activeSprite.workspaceState) {
@@ -368,8 +305,6 @@ initModeSwitcher(
         contents: boardToolboxContents
       };
       ws.updateToolbox(boardToolbox);
-      addCustomToolbar();
-
       ws.clear(); 
 
       // Auto-update the code panel once on entering board mode

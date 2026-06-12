@@ -1,0 +1,198 @@
+/* ════════════════════════════════════════════════════════
+   BLOCKLY TOOLBOX — TechyGuide Professional Category Sidebar
+   ════════════════════════════════════════════════════════ */
+
+/* ── Outer toolbox container ─────────────────────────── */
+
+.blocklyToolboxDiv {
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  background: #F8F8FC !important;   /* very faint blue-grey, not pure white */
+  border-right: 1px solid #E2E4F0 !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding: 10px 0 16px;
+  box-sizing: border-box;
+}
+.blocklyToolboxDiv::-webkit-scrollbar { display: none; }
+
+/* Contents wrapper */
+.blocklyToolboxContents {
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+/* ── Kill Blockly's height constraints ───────────────── */
+
+.blocklyToolboxCategory {
+  width: 68px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  cursor: pointer !important;
+}
+
+.blocklyToolboxCategory > div {
+  width: 68px !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.blocklyTreeRow,
+.blocklyToolboxCategory .blocklyTreeRow {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.blocklyTreeRowContentContainer {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+}
+
+.blocklyTreeSelected .blocklyTreeRow,
+.blocklyTreeSelected > .blocklyTreeRow {
+  background: transparent !important;
+}
+
+/* Hide Blockly defaults we don't use */
+.blocklyTreeIcon            { display: none !important; width:0 !important; height:0 !important; }
+.blocklyToolboxCategoryLabel { display: none !important; }
+.blocklyTreeSeparator       { display: none !important; }
+
+/* ── Our wrapper: pill hover background ──────────────── */
+
+.tg-cat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 60px;
+  padding: 6px 4px 5px;
+  border-radius: 10px;
+  margin: 2px auto;
+  background: transparent;
+  transition: background 0.15s ease;
+  /* Let clicks pass through to the parent htmlDiv_ which Blockly listens on */
+  pointer-events: none;
+  position: relative;
+}
+
+/* Hover on the category wrapper (still receives events) brightens the circle */
+.blocklyToolboxCategory:hover .tg-cat-circle:not(.tg-cat-circle--active) {
+  transform: scale(1.07);
+  filter: brightness(1.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* Hover background on pill — driven by parent hover since pill has pointer-events:none */
+.blocklyToolboxCategory:hover .tg-cat-pill:not(.tg-cat-pill--active) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Active pill: tinted with the category's own colour */
+.tg-cat-pill--active {
+  background: rgba(76, 151, 255, 0.08);  /* default; JS can set per-category */
+}
+
+/* ── Circle ──────────────────────────────────────────── */
+
+.tg-cat-circle {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.13s ease, box-shadow 0.13s ease, filter 0.13s ease;
+  position: relative;
+  pointer-events: none; /* clicks pass through to htmlDiv_ */
+}
+
+
+/* Active: scale down slightly (pressed feel) + strong shadow + inner glow */
+.tg-cat-circle--active {
+  transform: scale(0.96) !important;
+  box-shadow:
+    0 0 0 3px white,
+    0 0 0 5px currentColor,
+    0 4px 14px rgba(0, 0, 0, 0.22) !important;
+  filter: brightness(1.08) !important;
+}
+
+/* Active ring that uses the circle's own background colour */
+/* We use a pseudo-element ring so the colour matches the category */
+.tg-cat-circle--active::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2.5px solid;
+  border-color: inherit;
+  opacity: 0.6;
+}
+
+/* Icons are inline SVGs — force white stroke */
+.tg-cat-circle svg {
+  display: block;
+  flex-shrink: 0;
+  stroke: white;
+  fill: none;
+  overflow: visible;
+}
+
+/* For filled icons (Events lightning, etc.) */
+.tg-cat-circle svg[fill="white"] {
+  fill: white;
+}
+
+/* ── Label ───────────────────────────────────────────── */
+
+.tg-cat-label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.15;
+  margin-top: 4px;
+  color: #555770;         /* neutral dark — same for all, readable */
+  letter-spacing: 0.01em;
+  max-width: 58px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  transition: color 0.13s;
+}
+
+/* Active label takes the category colour */
+.tg-cat-pill--active .tg-cat-label {
+  color: #1E1E3F;
+  font-weight: 800;
+}
+
+/* ── Flyout ──────────────────────────────────────────── */
+
+.blocklyFlyoutBackground { fill: #ffffff !important; }

@@ -3,9 +3,29 @@ export const eventBlocks = {};
 
 eventBlocks['when_flag_clicked'] = {
   init: function() {
+    // Inline SVG as a data URI — green play triangle
+    const flagIcon =
+      'data:image/svg+xml;utf8,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" ' +
+        'viewBox="0 0 24 24" fill="%234CBF56">' +
+        '<polygon points="5,3 19,12 5,21"/>' +
+        '</svg>'
+      );
+
     this.jsonInit({
       type: 'when_flag_clicked',
-      message0: 'when 🟢 clicked',
+      message0: 'when %1 clicked',
+      args0: [
+        {
+          type: 'field_image',
+          src: flagIcon,
+          width: 18,
+          height: 18,
+          alt: '▶',
+          flipRtl: false,
+        }
+      ],
       nextStatement: null,
       colour: '#FFBF00',
       tooltip: 'Run when the green flag is clicked',
