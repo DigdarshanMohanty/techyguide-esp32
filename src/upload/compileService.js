@@ -53,7 +53,7 @@ export async function compileArduinoSketch(code, fqbn, onProgress) {
   onProgress?.('compiling');
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 360000);
 
   let response;
   try {
@@ -65,7 +65,7 @@ export async function compileArduinoSketch(code, fqbn, onProgress) {
     });
   } catch (networkErr) {
     if (networkErr.name === 'AbortError') {
-      throw new Error('Compile server timed out after 30 seconds.');
+      throw new Error('Compile server timed out after 360 seconds.');
     }
     throw new Error(
       'Cannot reach the compile server. Make sure it is running.\n\n' +

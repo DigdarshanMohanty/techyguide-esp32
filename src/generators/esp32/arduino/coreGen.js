@@ -1,38 +1,45 @@
 // Arduino C++ generator for ESP32 core blocks
 import { ArduinoOrder } from '../../arduinoGenerator';
+import { readPin } from '../../../boards/pinHelper';
 
 export const forBlock = Object.create(null);
 
 forBlock['esp32_when_starts'] = function (block, generator) {
-  // This block's content is extracted by arduinoCodeBuilder for setup()
+  return '';
+};
+
+forBlock['esp32_serial_begin'] = function (block, generator) {
+  const baud = block.getFieldValue('BAUD') || '115200';
+  // Underscore prefix sorts this entry first in setup()
+  generator.setupCode_['_serial_begin'] = `Serial.begin(${baud});`;
   return '';
 };
 
 forBlock['esp32_read_digital_pin'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '2');
   return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_read_analog_pin'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '34');
   return [`analogRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_set_digital_pin'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '2');
   const state = block.getFieldValue('STATE') === '1' ? 'HIGH' : 'LOW';
-  generator.setupCode_[`pinMode_${pin}`] = `pinMode(${pin}, OUTPUT);`;
+  generator.registerPin(pin, 'OUTPUT');
   return `digitalWrite(${pin}, ${state});\n`;
 };
 
 forBlock['esp32_set_pwm_pin'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '2');
   const value = block.getFieldValue('VALUE');
   return `analogWrite(${pin}, ${value});\n`;
 };
 
 forBlock['esp32_get_touch_pin'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '4');
   return [`touchRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 

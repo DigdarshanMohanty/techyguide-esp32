@@ -1,11 +1,5 @@
 // esp32 core blocks — pin mode, digital/analog read/write, delay
 import * as Blockly from "blockly/core";
-import { boardRegistry } from '../../boards/BoardRegistry';
-
-// Dynamic pin options from board registry (replaces hardcoded arrays)
-const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
-const ANALOG_PIN_OPTIONS = () => boardRegistry.getAnalogPins();
-const TOUCH_PIN_OPTIONS = () => boardRegistry.getTouchPins();
 
 const whenEsp32StartsUp = {
   type: "esp32_when_starts",
@@ -18,7 +12,7 @@ const whenEsp32StartsUp = {
 const readDigitalPin = {
   type: "esp32_read_digital_pin",
   message0: "read status of digital pin %1",
-  args0: [{ type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }],
+  args0: [{ type: "input_value", name: "PIN", check: "Number" }],
   output: "Number",
   colour: 210,
   tooltip: "Read the digital state (0 or 1) of a pin"
@@ -27,7 +21,7 @@ const readDigitalPin = {
 const readAnalogPin = {
   type: "esp32_read_analog_pin",
   message0: "read analog pin %1",
-  args0: [{ type: "field_dropdown", name: "PIN", options: ANALOG_PIN_OPTIONS }],
+  args0: [{ type: "input_value", name: "PIN", check: "Number" }],
   output: "Number",
   colour: 210,
   tooltip: "Read analog value (0-4095) from a pin"
@@ -37,7 +31,7 @@ const setDigitalPin = {
   type: "esp32_set_digital_pin",
   message0: "set digital pin %1 output as %2",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "field_dropdown", name: "STATE", options: [["HIGH","1"],["LOW","0"]] }
   ],
   previousStatement: null,
@@ -50,7 +44,7 @@ const setPwmPin = {
   type: "esp32_set_pwm_pin",
   message0: "set PWM pin %1 output as %2",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "field_number", name: "VALUE", value: 255, min: 0, max: 1023 }
   ],
   previousStatement: null,
@@ -62,7 +56,7 @@ const setPwmPin = {
 const getTouchPin = {
   type: "esp32_get_touch_pin",
   message0: "get value of touch pin %1",
-  args0: [{ type: "field_dropdown", name: "PIN", options: TOUCH_PIN_OPTIONS }],
+  args0: [{ type: "input_value", name: "PIN", check: "Number" }],
   output: "Number",
   colour: 210,
   tooltip: "Read the capacitive touch value"
@@ -110,7 +104,30 @@ const hallMagnetDetected = {
   tooltip: "Returns true if a magnet is near the ESP32 (built-in hall sensor)"
 };
 
+const serialBegin = {
+  type: "esp32_serial_begin",
+  message0: "set baud rate %1",
+  args0: [{
+    type: "field_dropdown",
+    name: "BAUD",
+    options: [
+      ["9600",   "9600"],
+      ["19200",  "19200"],
+      ["38400",  "38400"],
+      ["57600",  "57600"],
+      ["115200", "115200"],
+      ["230400", "230400"],
+      ["921600", "921600"],
+    ],
+  }],
+  previousStatement: null,
+  nextStatement: null,
+  colour: 210,
+  tooltip: "Set the serial baud rate. Place at the start of 'when ESP32 starts up'. Default is 115200.",
+};
+
 export const esp32CoreBlocks = Blockly.common.createBlockDefinitionsFromJsonArray([
   whenEsp32StartsUp, readDigitalPin, readAnalogPin, setDigitalPin,
-  setPwmPin, getTouchPin, getHallSensor, hallMagnetDetected, getBtMacAddress, mapValue
+  setPwmPin, getTouchPin, getHallSensor, hallMagnetDetected, getBtMacAddress, mapValue,
+  serialBegin,
 ]);

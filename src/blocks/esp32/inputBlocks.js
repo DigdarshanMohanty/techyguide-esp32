@@ -1,9 +1,5 @@
 // esp32 input blocks — tactile switch, slide switch
 import * as Blockly from "blockly/core";
-import { boardRegistry } from '../../boards/BoardRegistry';
-
-// Dynamic pin options from board registry (replaces hardcoded array)
-const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
 
 // ── Tactile Switch Ecosystem ──
 
@@ -11,7 +7,7 @@ const tactileSwitch = {
   type: "esp32_tactile_switch",
   message0: "is tactile switch at pin %1 pressed?",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Boolean", colour: 30,
   tooltip: "Check if a tactile switch is pressed (active LOW with internal pull-up)"
@@ -21,7 +17,7 @@ const waitUntilPressed = {
   type: "esp32_wait_until_pressed",
   message0: "wait until button at pin %1 is pressed",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,
@@ -33,7 +29,7 @@ const whenSwitchPressed = {
   type: "esp32_when_switch_pressed",
   message0: "when button at pin %1 is pressed %2",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "input_statement", name: "DO" }
   ],
   colour: 30,
@@ -46,7 +42,7 @@ const slideSwitch = {
   type: "esp32_slide_switch",
   message0: "slide switch at pin %1 state",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Number", colour: 30,
   tooltip: "Read the slide switch state (0 or 1)"
@@ -56,7 +52,7 @@ const slideSwitchIsOn = {
   type: "esp32_slide_switch_is_on",
   message0: "slide switch at pin %1 is ON?",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Boolean", colour: 30,
   tooltip: "Returns true if slide switch is in the ON position"
@@ -66,7 +62,7 @@ const slideSwitchIsOff = {
   type: "esp32_slide_switch_is_off",
   message0: "slide switch at pin %1 is OFF?",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Boolean", colour: 30,
   tooltip: "Returns true if slide switch is in the OFF position"

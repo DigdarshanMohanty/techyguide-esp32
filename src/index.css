@@ -2378,3 +2378,339 @@ input:focus {
 /* board mode: keep blocklyDiv visible, swap right panel to code editor */
 .mode-board   #scratchPane  { display: none !important; }
 .mode-board   #boardPane    { display: flex !important; }
+
+/* ── Header project controls ──────────────────────── */
+
+.project-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 4px;
+}
+
+.project-name-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.unsaved-dot {
+  font-size: 10px;
+  color: #FFBF00;
+  line-height: 1;
+}
+
+/* ── Icon-only header buttons (New, Open, Save) ───── */
+
+.header-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.header-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+
+.header-icon-btn:active {
+  transform: scale(0.93);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+#saveProjectBtn {
+  border-color: rgba(76, 151, 255, 0.5);
+  color: #4C97FF;
+}
+#saveProjectBtn:hover {
+  background: rgba(76, 151, 255, 0.15);
+  border-color: #4C97FF;
+  color: #ffffff;
+}
+
+/* ── Toast notification ───────────────────────────── */
+
+#tg-toast {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ── Arduino upload: multi-line error panel ───────── */
+
+.upload-error-panel {
+  position: relative;
+  margin-top: 10px;
+  padding: 10px 32px 10px 12px;
+  background: #FFF2F2;
+  border: 1px solid #FFBABA;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #5D0000;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.upload-error-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+  color: #999;
+  padding: 0 2px;
+  line-height: 1;
+}
+.upload-error-close:hover { color: #333; }
+
+/* ── BOOT button onboarding tip ───────────────────── */
+
+.upload-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #FFF8E1;
+  border: 1px solid #FFE082;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #5D4037;
+  line-height: 1.4;
+}
+
+.upload-tip span { flex: 1; }
+
+.upload-tip button {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border: 1px solid #FFD54F;
+  border-radius: 4px;
+  background: #FFF3CD;
+  font-size: 10px;
+  cursor: pointer;
+}
+.upload-tip button:hover { background: #FFE082; }
+
+/* ── Upload Progress Bar ─────────────────────────── */
+
+#uploadProgressWrap {
+  padding: 10px 14px 8px;
+  background: #ffffff;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upl-stage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upl-stage-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.upl-stage-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.upl-stage-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E1E3F;
+  flex: 1;
+}
+
+.upl-pct-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4C97FF;
+  min-width: 32px;
+  text-align: right;
+}
+
+.upl-track {
+  height: 6px;
+  background: #E5E7EB;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.upl-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4C97FF 0%, #59C059 100%);
+  border-radius: 999px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.upl-bar.success {
+  background: #4CBF56;
+  transition: width 0.2s ease, background 0.3s ease;
+}
+
+.upl-bar.error {
+  background: #FC2F2F;
+  transition: background 0.2s ease;
+}
+
+.upl-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.45) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.4s infinite;
+  z-index: 2;
+}
+
+.upl-shimmer.hidden {
+  display: none;
+}
+
+@keyframes shimmer {
+  0%   { left: -60%; }
+  100% { left: 110%; }
+}
+
+.upl-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 2px;
+}
+
+.upl-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+}
+
+.upl-step span {
+  font-size: 9px;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.upl-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E5E7EB;
+  border: 2px solid #E5E7EB;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.upl-step.active .upl-step-dot {
+  background: #4C97FF;
+  border-color: #4C97FF;
+  box-shadow: 0 0 0 3px rgba(76,151,255,0.2);
+}
+
+.upl-step.active span { color: #4C97FF; }
+
+.upl-step.done .upl-step-dot {
+  background: #4CBF56;
+  border-color: #4CBF56;
+}
+
+.upl-step.done span { color: #4CBF56; }
+
+.upl-step.error .upl-step-dot {
+  background: #FC2F2F;
+  border-color: #FC2F2F;
+}
+
+.upl-step.error span { color: #FC2F2F; }
+
+.upl-step-line {
+  flex: 0 0 20px;
+  height: 2px;
+  background: #E5E7EB;
+  margin-bottom: 14px;
+  transition: background 0.2s;
+}
+
+.upl-step-line.done { background: #4CBF56; }
+
+/* ── Serial Monitor Stop Button ──────────────────── */
+
+.sm-stop-btn {
+  background: rgba(252, 47, 47, 0.08) !important;
+  border-color: rgba(252, 47, 47, 0.3) !important;
+  color: #FC2F2F !important;
+}
+
+.sm-stop-btn:hover {
+  background: rgba(252, 47, 47, 0.15) !important;
+  border-color: #FC2F2F !important;
+}
+
+/* ── Reading indicator — pulsing red dot ─────────── */
+
+.sm-reading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9CA3AF;
+  transition: background 0.2s;
+}
+
+.sm-reading-indicator.active .sm-dot {
+  background: #FC2F2F;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

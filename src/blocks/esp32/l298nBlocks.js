@@ -1,20 +1,16 @@
 // L298N Motor Driver block definitions
 import * as Blockly from "blockly/core";
-import { boardRegistry } from '../../boards/BoardRegistry';
-
-// Dynamic pin options from board registry (replaces hardcoded array)
-const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
 
 const l298nInit = {
   type: "esp32_l298n_init",
   message0: "configure L298N: IN1 %1 IN2 %2 ENA %3 IN3 %4 IN4 %5 ENB %6",
   args0: [
-    { type: "field_dropdown", name: "IN1", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "IN2", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "ENA", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "IN3", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "IN4", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "ENB", options: PIN_OPTIONS }
+    { type: "input_value", name: "IN1", check: "Number" },
+    { type: "input_value", name: "IN2", check: "Number" },
+    { type: "input_value", name: "ENA", check: "Number" },
+    { type: "input_value", name: "IN3", check: "Number" },
+    { type: "input_value", name: "IN4", check: "Number" },
+    { type: "input_value", name: "ENB", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,

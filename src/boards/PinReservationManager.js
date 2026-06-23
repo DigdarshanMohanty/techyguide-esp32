@@ -88,6 +88,20 @@ const INPUT_USAGES = new Set([
 ]);
 
 
+// Read a pin number from a block's input_value slot (connected number block),
+// falling back to getFieldValue for legacy field_dropdown blocks.
+function _readPinValue(block, inputName) {
+  const target = block.getInputTargetBlock(inputName);
+  if (target) {
+    const numVal = target.getFieldValue('NUM');
+    if (numVal !== null && numVal !== undefined) return String(numVal);
+  }
+  // Legacy fallback: field_dropdown
+  const fieldVal = block.getFieldValue(inputName);
+  if (fieldVal !== null && fieldVal !== undefined) return String(fieldVal);
+  return null;
+}
+
 class PinReservationManager {
   constructor() {
     // pin (string) → Map<blockId, { usage, blockType }>
@@ -212,18 +226,18 @@ class PinReservationManager {
 
       // Process primary fields
       for (const fieldName of mapping.fields) {
-        const pinValue = block.getFieldValue(fieldName);
-        if (pinValue !== null && pinValue !== undefined) {
-          this.reserve(String(pinValue), block.id, mapping.usage, block.type);
+        const pinValue = _readPinValue(block, fieldName);
+        if (pinValue !== null) {
+          this.reserve(pinValue, block.id, mapping.usage, block.type);
         }
       }
 
       // Process extra field-usage pairs (e.g., ultrasonic TRIG vs ECHO)
       if (mapping.extra) {
         for (const { field, usage } of mapping.extra) {
-          const pinValue = block.getFieldValue(field);
-          if (pinValue !== null && pinValue !== undefined) {
-            this.reserve(String(pinValue), block.id, usage, block.type);
+          const pinValue = _readPinValue(block, field);
+          if (pinValue !== null) {
+            this.reserve(pinValue, block.id, usage, block.type);
           }
         }
       }

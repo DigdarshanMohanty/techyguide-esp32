@@ -83,10 +83,12 @@ import { initUploadPanel, updateUploadButtonForLanguage } from "./ui/uploadPanel
 import { buildESP32Code } from "./upload/codeBuilder";
 import { buildArduinoSketch, emptyArduinoSketch } from "./upload/arduinoCodeBuilder";
 import { initModeSwitcher, getCurrentMode } from "./ui/ModeSwitcher";
+import { initProjectManager } from "./ui/ProjectManager";
 import { initSpritePanel } from "./ui/SpritePanel";
 import { initConnectButton } from "./ui/ConnectModal";
 import { initSerialMonitor } from "./ui/SerialMonitor";
 import { refreshIcons } from "./ui/icons";
+import { pinReservationManager } from "./boards/PinReservationManager";
 import "./index.css";
 import "./output.css";
 
@@ -208,6 +210,7 @@ const ws = Blockly.inject(blocklyDiv, {
 // Blockly measures its container at inject time; inside a flex column the
 // height may not be settled yet, so force a resize and keep it synced.
 requestAnimationFrame(() => Blockly.svgResize(ws));
+initProjectManager(ws);
 new ResizeObserver(() => Blockly.svgResize(ws)).observe(blocklyDiv);
 
 
@@ -345,7 +348,8 @@ const downloadBtnLabel = document.getElementById("downloadBtnLabel");
 // Provide the code from textarea to the upload panel
 initUploadPanel(
   () => codeTextarea?.value || '',
-  () => currentCodeLang
+  () => currentCodeLang,
+  () => ws
 );
 
 // ── Stage / Code View Toggle (driven by header pills) ──
@@ -469,9 +473,53 @@ codeTextarea?.addEventListener('keydown', (e) => {
   }
 });
 
+// ── Pin Conflict Validation ──────────────────────────
+const pinConflictBadge = document.getElementById('pinConflictBadge');
+
+function updatePinConflicts() {
+  pinReservationManager.scanWorkspace(ws);
+  const conflicts = pinReservationManager.getConflicts();
+
+  // Clear all existing block warnings first
+  for (const block of ws.getAllBlocks(false)) {
+    const type = block.type;
+    if (type && type.startsWith('esp32_')) {
+      block.setWarningText(null);
+    }
+  }
+
+  // Apply yellow warning triangles to conflicting blocks
+  for (const { message, blockIds } of conflicts) {
+    for (const id of blockIds) {
+      const block = ws.getBlockById(id);
+      if (block) {
+        const existing = block.getWarningText();
+        block.setWarningText(existing ? `${existing}\n${message}` : message);
+      }
+    }
+  }
+
+  // Update badge
+  if (pinConflictBadge) {
+    if (conflicts.length > 0) {
+      pinConflictBadge.textContent = `⚠ ${conflicts.length} pin conflict${conflicts.length > 1 ? 's' : ''}`;
+      pinConflictBadge.style.display = 'inline-flex';
+    } else {
+      pinConflictBadge.style.display = 'none';
+    }
+  }
+}
+
+let _pinScanTimer = null;
+function schedulePinScan() {
+  clearTimeout(_pinScanTimer);
+  _pinScanTimer = setTimeout(updatePinConflicts, 300);
+}
+
 // ── Workspace Change → Regenerate Code ──────────────
 ws.addChangeListener((e) => {
   if (e.isUiEvent || e.type === Blockly.Events.FINISHED_LOADING || ws.isDragging()) return;
+  schedulePinScan();
   regenerateCode();
 });
 

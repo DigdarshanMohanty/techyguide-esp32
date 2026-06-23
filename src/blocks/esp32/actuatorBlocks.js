@@ -1,9 +1,5 @@
 // esp32 actuator blocks — servo, motor, buzzer, led
 import * as Blockly from "blockly/core";
-import { boardRegistry } from '../../boards/BoardRegistry';
-
-// Dynamic pin options from board registry (replaces hardcoded array)
-const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
 
 const SERVO_OPTIONS = [["1","1"],["2","2"],["3","3"],["4","4"]];
 const MOTOR_OPTIONS = [["1","1"],["2","2"],["3","3"],["4","4"]];
@@ -13,7 +9,7 @@ const enableServo = {
   message0: "enable Servo %1 for servo connected to %2",
   args0: [
     { type: "field_dropdown", name: "SERVO", options: SERVO_OPTIONS },
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,
@@ -25,7 +21,7 @@ const setServoAngle = {
   type: "esp32_set_servo_angle",
   message0: "set servo on %1 to %2 angle",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "field_number", name: "ANGLE", value: 30, min: 0, max: 180 }
   ],
   previousStatement: null,
@@ -51,9 +47,9 @@ const enableMotor = {
   message0: "enable motor %1 connected to DIR pin %2 , %3 & PWM pin %4",
   args0: [
     { type: "field_dropdown", name: "MOTOR", options: MOTOR_OPTIONS },
-    { type: "field_dropdown", name: "DIR1", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "DIR2", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "PWM", options: PIN_OPTIONS }
+    { type: "input_value", name: "DIR1", check: "Number" },
+    { type: "input_value", name: "DIR2", check: "Number" },
+    { type: "input_value", name: "PWM", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,
@@ -65,7 +61,7 @@ const setRelay = {
   type: "esp32_set_relay",
   message0: "set relay at pin %1 to %2",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "field_dropdown", name: "STATE", options: [["ON","1"],["OFF","0"]] }
   ],
   previousStatement: null,
@@ -87,7 +83,7 @@ const setLedBrightness = {
   type: "esp32_set_led_brightness",
   message0: "set LED brightness at pin %1 to %2",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "field_number", name: "VALUE", value: 255, min: 0, max: 1023 }
   ],
   previousStatement: null,
@@ -100,7 +96,7 @@ const detachServo = {
   type: "esp32_detach_servo",
   message0: "detach servo on pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,
@@ -112,7 +108,7 @@ const relayToggle = {
   type: "esp32_relay_toggle",
   message0: "toggle relay at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,
@@ -124,7 +120,7 @@ const relayState = {
   type: "esp32_relay_state",
   message0: "relay state at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Boolean",
   colour: 30,
@@ -144,7 +140,7 @@ const rotateServo = {
   type: "esp32_rotate_servo",
   message0: "rotate servo on pin %1 from %2 to %3 speed %4",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS },
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "field_number", name: "FROM", value: 0, min: 0, max: 180 },
     { type: "field_number", name: "TO", value: 180, min: 0, max: 180 },
     { type: "field_dropdown", name: "SPEED", options: [["slow","30"],["medium","15"],["fast","5"]] }

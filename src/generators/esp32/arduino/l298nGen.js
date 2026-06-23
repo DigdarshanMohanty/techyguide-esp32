@@ -20,12 +20,12 @@ forBlock['esp32_l298n_init'] = function (block, generator) {
     `const int L298N_IN1 = ${in1};\nconst int L298N_IN2 = ${in2};\nconst int L298N_ENA = ${ena};\n` +
     `const int L298N_IN3 = ${in3};\nconst int L298N_IN4 = ${in4};\nconst int L298N_ENB = ${enb};`);
 
-  generator.sketch.pin(in1, 'OUTPUT');
-  generator.sketch.pin(in2, 'OUTPUT');
-  generator.sketch.pin(ena, 'OUTPUT');
-  generator.sketch.pin(in3, 'OUTPUT');
-  generator.sketch.pin(in4, 'OUTPUT');
-  generator.sketch.pin(enb, 'OUTPUT');
+  generator.registerPin(in1, 'OUTPUT');
+  generator.registerPin(in2, 'OUTPUT');
+  generator.registerPin(ena, 'OUTPUT');
+  generator.registerPin(in3, 'OUTPUT');
+  generator.registerPin(in4, 'OUTPUT');
+  generator.registerPin(enb, 'OUTPUT');
 
   generator.sketch.setup('l298n_speed',
     'analogWrite(L298N_ENA, 255);\nanalogWrite(L298N_ENB, 255);');

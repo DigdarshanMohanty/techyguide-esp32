@@ -11,13 +11,14 @@
 //  mpu_tilt     │ math.h             │                    │                 │ _mpuIsTilted
 
 import { ArduinoOrder } from '../../arduinoGenerator';
+import { readPin } from '../../../boards/pinHelper';
 
 export const forBlock = Object.create(null);
 
 // ── MPU6050 Init ─────────────────────────────────────
 forBlock['esp32_mpu_init'] = function (block, generator) {
-  const sda = block.getFieldValue('SDA');
-  const scl = block.getFieldValue('SCL');
+  const sda = readPin(block, generator, 'SDA', '21');
+  const scl = readPin(block, generator, 'SCL', '22');
   generator.sketch.include('#include <Wire.h>');
   generator.sketch.include('#include <Adafruit_MPU6050.h>');
   generator.sketch.include('#include <Adafruit_Sensor.h>');

@@ -59,6 +59,15 @@ export function initSerialMonitor() {
         <button class="sm-btn sm-icon-btn" id="smClearBtn" title="Clear output">
           <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
         </button>
+        <button class="sm-btn sm-icon-btn sm-stop-btn" id="smStopBtn"
+                title="Stop reading" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#FC2F2F">
+            <rect x="4" y="4" width="16" height="16" rx="2"/>
+          </svg>
+        </button>
+        <div class="sm-reading-indicator" id="smReadingIndicator" title="Reading">
+          <span class="sm-dot"></span>
+        </div>
         <button class="sm-btn sm-connect-btn" id="smConnectBtn" title="Connect / Disconnect">
           <i data-lucide="plug" style="width:13px;height:13px;"></i>
           <span id="smConnectLabel">Connect</span>
@@ -86,6 +95,10 @@ export function initSerialMonitor() {
   document.getElementById('smClearBtn')?.addEventListener('click', clearOutput);
   document.getElementById('smConnectBtn')?.addEventListener('click', handleConnect);
   document.getElementById('smSendBtn')?.addEventListener('click', sendInput);
+  document.getElementById('smStopBtn')?.addEventListener('click', async () => {
+    await _stopReading();
+    _updateConnectUI(false);
+  });
 
   document.getElementById('smBaudRate')?.addEventListener('change', (e) => {
     _baudRate = parseInt(e.target.value);
@@ -303,16 +316,22 @@ function clearOutput() {
  * Update the connect button UI.
  */
 function _updateConnectUI(connected) {
-  const btn = document.getElementById('smConnectBtn');
-  const label = document.getElementById('smConnectLabel');
-  if (!btn) return;
+  const connectBtn = document.getElementById('smConnectBtn');
+  const stopBtn    = document.getElementById('smStopBtn');
+  const indicator  = document.getElementById('smReadingIndicator');
+  const label      = document.getElementById('smConnectLabel');
+  if (!connectBtn) return;
 
   if (connected) {
-    btn.classList.add('sm-connected');
-    if (label) label.textContent = 'Disconnect';
+    connectBtn.classList.add('sm-connected');
+    if (label)      label.textContent = 'Disconnect';
+    if (stopBtn)    stopBtn.style.display = 'inline-flex';
+    if (indicator)  indicator.classList.add('active');
   } else {
-    btn.classList.remove('sm-connected');
-    if (label) label.textContent = 'Connect';
+    connectBtn.classList.remove('sm-connected');
+    if (label)      label.textContent = 'Connect';
+    if (stopBtn)    stopBtn.style.display = 'none';
+    if (indicator)  indicator.classList.remove('active');
   }
 }
 
@@ -375,13 +394,35 @@ export async function connectSerialMonitor() {
 
     // If the readable stream was canceled (by upload cleanup), reopen the port
     if (!port.readable) {
-      try {
-        await port.close();
-      } catch (_) {}
-      await new Promise(r => setTimeout(r, 300));
+  // Ensure any stale OS lock is released — CH340 needs this after flash
+  try { await port.close(); } catch (_) {}
+
+  // Wait for OS to fully release the CH340 port (500ms minimum)
+  // Without this, port.open() throws "The port is already open" or
+  // opens successfully but readable stays null
+  await new Promise(r => setTimeout(r, 500));
+
+  // Retry open up to 3 times — CH340 is slow to release
+  let opened = false;
+  for (let i = 0; i < 3; i++) {
+    try {
       await port.open({ baudRate: _baudRate });
-      await new Promise(r => setTimeout(r, 200));
+      opened = true;
+      break;
+    } catch (e) {
+      console.warn(`[SerialMonitor] port.open attempt ${i + 1} failed:`, e.message);
+      await new Promise(r => setTimeout(r, 300));
     }
+  }
+
+  if (!opened) {
+    appendOutput('[Error] Could not open port after flash. Try clicking Connect manually.\n', 'sm-error');
+    return;
+  }
+
+  // Small settle time so first bytes aren't missed
+  await new Promise(r => setTimeout(r, 200));
+}
 
     _monitorPort = port;
 

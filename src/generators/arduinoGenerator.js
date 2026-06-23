@@ -31,11 +31,25 @@ arduinoGenerator.ORDER_OVERRIDES = [];
 arduinoGenerator.init = function (workspace) {
   this.definitions_ = Object.create(null);
   this.setupCode_   = Object.create(null);
+  this.pinSetup_    = Object.create(null);
   this.sketch = new SketchRegistry();
   if (!this.nameDB_) {
     this.nameDB_ = new Blockly.Names('');
   }
   this.nameDB_.reset();
+};
+
+/**
+ * Register a GPIO pin direction for setup(). This is the ONLY way pins
+ * should enter setup() — generators must not write pinMode() strings directly.
+ * @param {number|string} pin
+ * @param {'OUTPUT'|'INPUT'|'INPUT_PULLUP'} direction
+ */
+arduinoGenerator.registerPin = function (pin, direction) {
+  const num = parseInt(pin, 10);
+  if (isNaN(num) || num < 0 || num > 39) return;
+  const key = `_pin_${String(num).padStart(2, '0')}_${direction}`;
+  this.pinSetup_[key] = { pin: num, direction };
 };
 
 arduinoGenerator.finish = function (code) {

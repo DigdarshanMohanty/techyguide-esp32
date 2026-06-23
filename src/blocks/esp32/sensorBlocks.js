@@ -1,17 +1,12 @@
 // esp32 sensor blocks — ultrasonic, ir, pir, rain, ldr, dht, analog, potentiometer
 import * as Blockly from "blockly/core";
-import { boardRegistry } from '../../boards/BoardRegistry';
-
-// Dynamic pin options from board registry (replaces hardcoded arrays)
-const PIN_OPTIONS = () => boardRegistry.getDigitalPins();
-const ANALOG_PIN_OPTIONS = () => boardRegistry.getAnalogPins();
 
 const ultrasonic = {
   type: "esp32_ultrasonic",
   message0: "get ultrasonic sensor distance (cm) | trig %1 , echo %2",
   args0: [
-    { type: "field_dropdown", name: "TRIG", options: PIN_OPTIONS },
-    { type: "field_dropdown", name: "ECHO", options: PIN_OPTIONS }
+    { type: "input_value", name: "TRIG", check: "Number" },
+    { type: "input_value", name: "ECHO", check: "Number" }
   ],
   output: "Number",
   colour: 0,
@@ -25,7 +20,7 @@ const digitalSensor = {
     { type: "field_dropdown", name: "SENSOR", options: [
       ["PIR","PIR"],["IR","IR"],["touch","TOUCH"],["vibration","VIBRATION"]
     ]},
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Number",
   colour: 0,
@@ -39,7 +34,7 @@ const dhtSensor = {
     { type: "field_dropdown", name: "READING", options: [
       ["temperature","temperature"],["humidity","humidity"]
     ]},
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Number",
   colour: 0,
@@ -56,7 +51,7 @@ const analogSensor = {
       ["gas / MQ","GAS"],
       ["custom","CUSTOM"]
     ]},
-    { type: "field_dropdown", name: "PIN", options: ANALOG_PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Number",
   colour: 0,
@@ -67,7 +62,7 @@ const potentiometer = {
   type: "esp32_potentiometer",
   message0: "get potentiometer value at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: ANALOG_PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Number",
   colour: 0,
@@ -80,7 +75,7 @@ const pirSensor = {
   type: "esp32_pir_sensor",
   message0: "motion detected? (PIR) at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Boolean",
   colour: 0,
@@ -91,7 +86,7 @@ const irSensor = {
   type: "esp32_ir_sensor",
   message0: "obstacle detected? (IR) at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Boolean",
   colour: 0,
@@ -102,15 +97,7 @@ const rainSensor = {
   type: "esp32_rain_sensor",
   message0: "read rain sensor at pin %1 mode %2",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: () => {
-      // Rain sensor supports both analog and digital pins
-      const analog = boardRegistry.getAnalogPins();
-      const digital = boardRegistry.getDigitalPins();
-      // Merge: analog first, then digital pins not already in analog
-      const analogValues = new Set(analog.map(p => p[1]));
-      const extra = digital.filter(p => !analogValues.has(p[1]));
-      return [...analog, ...extra];
-    }},
+    { type: "input_value", name: "PIN", check: "Number" },
     { type: "field_dropdown", name: "MODE", options: [
       ["analog (0-4095)","ANALOG"],
       ["digital (0/1)","DIGITAL"]
@@ -125,7 +112,7 @@ const ldrSensor = {
   type: "esp32_ldr_sensor",
   message0: "read light level (LDR) at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: ANALOG_PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Number",
   colour: 0,
@@ -138,7 +125,7 @@ const hallModuleValue = {
   type: "esp32_hall_module_value",
   message0: "hall module value at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Number",
   colour: 0,
@@ -149,7 +136,7 @@ const hallModuleDetected = {
   type: "esp32_hall_module_detected",
   message0: "magnet detected? (hall module at pin %1)",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   output: "Boolean",
   colour: 0,
@@ -160,7 +147,7 @@ const hallModuleWait = {
   type: "esp32_hall_module_wait",
   message0: "wait for magnet at pin %1",
   args0: [
-    { type: "field_dropdown", name: "PIN", options: PIN_OPTIONS }
+    { type: "input_value", name: "PIN", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,

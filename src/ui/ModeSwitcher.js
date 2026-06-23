@@ -1,5 +1,10 @@
 // ModeSwitcher — builds the modern navbar and handles mode/view toggling
 import { refreshIcons } from './icons';
+import {
+  saveProjectToFile,
+  openProjectFromFile,
+  newProject,
+} from './ProjectManager.js';
 
 let currentMode = 'scratch'; // 'scratch' | 'board'
 let currentBoardView = 'stage'; // 'stage' | 'code'
@@ -200,6 +205,72 @@ export function initModeSwitcher(onModeChange, onViewChange) {
   // ══════════════════════════════════════════════════
   const rightSection = document.createElement('div');
   rightSection.className = 'flex items-center gap-3 shrink-0';
+
+  // ── Project name display ─────────────────────────────
+  const projectNameWrap = document.createElement('div');
+  projectNameWrap.className = 'project-name-wrap';
+  projectNameWrap.innerHTML = `
+    <span id="projectNameDisplay" class="project-name-text">Untitled Project</span>
+    <span id="unsavedIndicator" class="unsaved-dot" style="display:none" title="Unsaved changes">●</span>
+  `;
+  rightSection.appendChild(projectNameWrap);
+
+  // ── New Project button ───────────────────────────────
+  const newBtn = document.createElement('button');
+  newBtn.className = 'header-icon-btn';
+  newBtn.title     = 'New Project';
+  newBtn.id        = 'newProjectBtn';
+  newBtn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="11" x2="12" y2="17"/>
+      <line x1="9" y1="14" x2="15" y2="14"/>
+    </svg>
+  `;
+  newBtn.addEventListener('click', newProject);
+  rightSection.appendChild(newBtn);
+
+  // ── Open Project button ──────────────────────────────
+  const openBtn = document.createElement('button');
+  openBtn.className = 'header-icon-btn';
+  openBtn.title     = 'Open Project';
+  openBtn.id        = 'openProjectBtn';
+  openBtn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      <line x1="12" y1="11" x2="12" y2="17"/>
+      <polyline points="9 14 12 11 15 14"/>
+    </svg>
+  `;
+  openBtn.addEventListener('click', openProjectFromFile);
+  rightSection.appendChild(openBtn);
+
+  // ── Save Project button ──────────────────────────────
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'header-icon-btn';
+  saveBtn.title     = 'Save Project  (⌘S)';
+  saveBtn.id        = 'saveProjectBtn';
+  saveBtn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 0-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+  `;
+  saveBtn.addEventListener('click', saveProjectToFile);
+  rightSection.appendChild(saveBtn);
+
+  // ── Keyboard shortcut: Cmd/Ctrl + S ─────────────────
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault();
+      saveProjectToFile();
+    }
+  });
 
   // ── View Toggle (Professional Pill Tabs) ──
   const tabGroup = document.createElement('div');

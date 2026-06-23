@@ -5,8 +5,8 @@ const mpuInit = {
   type: "esp32_mpu_init",
   message0: "initialize MPU6050 on SDA %1 SCL %2",
   args0: [
-    { type: "field_dropdown", name: "SDA", options: [["21","21"],["22","22"],["25","25"],["26","26"],["27","27"],["32","32"],["33","33"]] },
-    { type: "field_dropdown", name: "SCL", options: [["22","22"],["21","21"],["25","25"],["26","26"],["27","27"],["32","32"],["33","33"]] }
+    { type: "input_value", name: "SDA", check: "Number" },
+    { type: "input_value", name: "SCL", check: "Number" }
   ],
   previousStatement: null,
   nextStatement: null,

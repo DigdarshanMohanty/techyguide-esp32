@@ -16,6 +16,14 @@ function cdnUrl(md5ext) {
   return `${CDN_BASE}/${md5ext}/get/`;
 }
 
+// Only generic, non-trademarked categories — Scratch mascots are excluded
+const SAFE_SPRITE_TAGS = new Set([
+  'animals', 'food', 'nature', 'fantasy',
+  'things', 'transportation', 'sports', 'music',
+  'space', 'underwater', 'insects', 'dinosaurs',
+  'letters', 'numbers',
+]);
+
 let _spritesCache   = null;
 let _backdropsCache = null;
 let _spritesPromise   = null;
@@ -36,7 +44,10 @@ export async function fetchScratchSprites() {
       const raw = await res.json();
 
       _spritesCache = raw
-        .filter(s => !s.isStage)
+        .filter(sprite => {
+          const tags = (sprite.tags || []).map(t => t.toLowerCase());
+          return tags.some(tag => SAFE_SPRITE_TAGS.has(tag));
+        })
         .map(sprite => {
           const costumes = (sprite.costumes || []).map(c => ({
             name: c.name || 'costume1',

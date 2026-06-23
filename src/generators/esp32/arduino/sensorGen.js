@@ -1,15 +1,16 @@
 // Arduino C++ generator for ESP32 sensor blocks
 import { ArduinoOrder } from '../../arduinoGenerator';
+import { readPin } from '../../../boards/pinHelper';
 
 export const forBlock = Object.create(null);
 
 forBlock['esp32_ultrasonic'] = function (block, generator) {
-  const trig = block.getFieldValue('TRIG');
-  const echo = block.getFieldValue('ECHO');
+  const trig = readPin(block, generator, 'TRIG', '5');
+  const echo = readPin(block, generator, 'ECHO', '18');
+  generator.registerPin(trig, 'OUTPUT');
+  generator.registerPin(echo, 'INPUT');
   generator.definitions_['def_ultrasonic'] =
 `long readUltrasonic(int trigPin, int echoPin) {
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
   digitalWrite(trigPin, LOW);
   delayMicroseconds(5);
   digitalWrite(trigPin, HIGH);
@@ -23,14 +24,14 @@ forBlock['esp32_ultrasonic'] = function (block, generator) {
 };
 
 forBlock['esp32_digital_sensor'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
-  generator.definitions_[`pin_input_${pin}`] = `// Pin ${pin} configured as INPUT`;
+  const pin = readPin(block, generator, 'PIN', '4');
+  generator.registerPin(pin, 'INPUT');
   return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_dht'] = function (block, generator) {
   const reading = block.getFieldValue('READING');
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '4');
   generator.definitions_['include_dht'] = '#include <DHT.h>';
   generator.definitions_[`decl_dht_${pin}`] = `DHT dht${pin}(${pin}, DHT11);`;
   generator.sketch.setup(`init_dht_${pin}`, `dht${pin}.begin();`);
@@ -39,19 +40,17 @@ forBlock['esp32_dht'] = function (block, generator) {
 };
 
 forBlock['esp32_analog_sensor'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '34');
   return [`analogRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_potentiometer'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '34');
   return [`analogRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
-// ── New dedicated sensor blocks ──
-
 forBlock['esp32_rain_sensor'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '34');
   const mode = block.getFieldValue('MODE');
   if (mode === 'DIGITAL') {
     return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
@@ -61,32 +60,32 @@ forBlock['esp32_rain_sensor'] = function (block, generator) {
 };
 
 forBlock['esp32_ldr_sensor'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '34');
   return [`analogRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_ir_sensor'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '4');
   return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_pir_sensor'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '4');
   return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_hall_module_value'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '4');
   return [`digitalRead(${pin})`, ArduinoOrder.FUNCTION_CALL];
 };
 
 forBlock['esp32_hall_module_detected'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
+  const pin = readPin(block, generator, 'PIN', '4');
   return [`(digitalRead(${pin}) == LOW)`, ArduinoOrder.EQUALITY];
 };
 
 forBlock['esp32_hall_module_wait'] = function (block, generator) {
-  const pin = block.getFieldValue('PIN');
-  generator.setupCode_[`pinMode_${pin}`] = `pinMode(${pin}, INPUT);`;
+  const pin = readPin(block, generator, 'PIN', '4');
+  generator.registerPin(pin, 'INPUT');
   return `while (digitalRead(${pin}) == HIGH) { delay(10); }\n`;
 };

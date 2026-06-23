@@ -156,6 +156,16 @@ class SpriteStore {
     this._emit('update', sprite);
   }
 
+  clearAll() {
+    const ids = this.sprites.map(s => s.id);
+    for (const id of ids) {
+      this.removeSprite(id);
+    }
+    this._currentBackdrop = null;
+    this.selectedSpriteId = null;
+    this._emit('reset', null);
+  }
+
   getCurrentBackdrop() {
     return this._currentBackdrop;
   }
